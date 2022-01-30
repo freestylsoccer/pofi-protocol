@@ -4,6 +4,7 @@ import { ZERO_ADDRESS } from '../../helpers/constants';
 import {
   getAddressById,
   getAToken,
+  getPToken,
   getFirstSigner,
   getInterestRateStrategy,
   getLendingPoolAddressesProvider,
@@ -35,8 +36,31 @@ task('verify:tokens', 'Deploy oracles for dev enviroment')
       await getFirstSigner()
     );
 
+    await verifyContract(
+      eContractid.InitializableAdminUpgradeabilityProxy,
+      await getPToken("0x587AC2c09479de3c330830b82c762f02b11F1860"),
+      []
+    );
+
     const configs = Object.entries(ReservesConfig) as [string, IReserveParams][];
-    for (const entry of Object.entries(getParamPerNetwork(ReserveAssets, network))) {
+    // console.log(ReserveAssets);
+    // console.log(configs);
+    const otherReserveAssets =
+    {
+      DAI: "0xA325C8f4e48F9331FcF680D9757e9d7Af4461394",
+      TUSD: "0x70B7dC2DF4d782f2287d5cb36e2FD1bBB695074d",
+      USDC: "0x24CBec54ad1cC16B8e7bCB681D2E9F51939FC617",
+      USDT: "0x041A67A9fe6d7C0E13c1ae5d69784C6c9beb2216",
+      SUSD: "0x5595Aaa3Ae2bc8816989b7DFEBf71F276A7eEacf",
+      BUSD: "0xFD4d00188B0a312d7d339C815B04b766b273f7C0",
+    }
+    await verifyContract(
+      eContractid.InitializableAdminUpgradeabilityProxy,
+      await getAToken("0x04Ad3399D9108B2121BdE669f8d5C1B291758E40"),
+      []
+    );
+
+    for (const entry of Object.entries(otherReserveAssets)) {
       const [token, tokenAddress] = entry;
       console.log(`- Verifying ${token} token related contracts`);
       const {
@@ -100,11 +124,11 @@ task('verify:tokens', 'Deploy oracles for dev enviroment')
           stableRateSlope2,
         ]
       );
-
+      
       const stableDebt = await getAddressById(`stableDebt${token}`);
       const variableDebt = await getAddressById(`variableDebt${token}`);
       const aToken = await getAddressById(`a${token}`);
-
+      console.log(aToken)
       if (aToken) {
         console.log('\n- Verifying aToken...\n');
         await verifyContract(eContractid.AToken, await getAToken(aToken), [
@@ -118,6 +142,7 @@ task('verify:tokens', 'Deploy oracles for dev enviroment')
       } else {
         console.error(`Skipping aToken verify for ${token}. Missing address at JSON DB.`);
       }
+
       if (stableDebt) {
         console.log('\n- Verifying StableDebtToken...\n');
         await verifyContract(eContractid.StableDebtToken, await getStableDebtToken(stableDebt), [

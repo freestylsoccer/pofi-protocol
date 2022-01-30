@@ -5,16 +5,21 @@ pragma experimental ABIEncoderV2;
 interface ILendingPoolConfigurator {
   struct InitReserveInput {
     address aTokenImpl;
+    address pTokenImpl;
     address stableDebtTokenImpl;
     address variableDebtTokenImpl;
     uint8 underlyingAssetDecimals;
     address interestRateStrategyAddress;
     address underlyingAsset;
+    address project;
     address treasury;
     address incentivesController;
+    address projectBorrower;
     string underlyingAssetName;
     string aTokenName;
     string aTokenSymbol;
+    string pTokenName;
+    string pTokenSymbol;
     string variableDebtTokenName;
     string variableDebtTokenSymbol;
     string stableDebtTokenName;
@@ -52,6 +57,7 @@ interface ILendingPoolConfigurator {
   event ReserveInitialized(
     address indexed asset,
     address indexed aToken,
+    address pToken,
     address stableDebtToken,
     address variableDebtToken,
     address interestRateStrategyAddress
@@ -176,4 +182,30 @@ interface ILendingPoolConfigurator {
     address indexed proxy,
     address indexed implementation
   );
+
+  /**
+   * @dev Emitted when borrowing is enabled on a reserve
+   * @param project The address of the project contrat associated to the reserve
+   * @param enabled True if deposits are enabled, false otherwise
+   **/
+  event DepositsEnabledOnReserve(address project, bool enabled);
+
+  /**
+   * @dev Emitted when deposits are disabled on a reserve
+   * @param project The address of the project contrat associated to the reserve
+   **/
+  event DepositsDisabledOnReserve(address indexed project);
+
+  /**
+   * @dev Emitted when borrowing is enabled on a reserve
+   * @param project The address of the project contrat associated to the reserve
+   * @param enabled True if deposits are enabled, false otherwise
+   **/
+  event WithdrawalsEnabledOnReserve(address project, bool enabled);
+
+  /**
+   * @dev Emitted when Withdrawals are disabled on a reserve
+   * @param project The address of the project contrat associated to the reserve
+   **/
+  event WithdrawalsDisabledOnReserve(address indexed project);
 }

@@ -1,6 +1,7 @@
 import { task } from 'hardhat/config';
 import {
   deployATokenImplementations,
+  deployPTokenImplementations,
   deployATokensAndRatesHelper,
   deployLendingPool,
   deployLendingPoolConfigurator,
@@ -59,4 +60,5 @@ task('dev:deploy-lending-pool', 'Deploy lending pool for dev enviroment')
       verify
     );
     await deployATokenImplementations(pool, poolConfig.ReservesConfig, verify);
+    await deployPTokenImplementations(pool, poolConfig.ReservesConfig, verify);
   });

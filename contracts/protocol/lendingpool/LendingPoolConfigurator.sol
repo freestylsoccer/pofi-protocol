@@ -16,6 +16,7 @@ import {PercentageMath} from '../libraries/math/PercentageMath.sol';
 import {DataTypes} from '../libraries/types/DataTypes.sol';
 import {IInitializableDebtToken} from '../../interfaces/IInitializableDebtToken.sol';
 import {IInitializableAToken} from '../../interfaces/IInitializableAToken.sol';
+import {IInitializablePToken} from '../../interfaces/IInitializablePToken.sol';
 import {IAaveIncentivesController} from '../../interfaces/IAaveIncentivesController.sol';
 import {ILendingPoolConfigurator} from '../../interfaces/ILendingPoolConfigurator.sol';
 
@@ -75,11 +76,27 @@ contract LendingPoolConfigurator is VersionedInitializable, ILendingPoolConfigur
           IInitializableAToken.initialize.selector,
           pool,
           input.treasury,
-          input.underlyingAsset,
+          input.project,
           IAaveIncentivesController(input.incentivesController),
           input.underlyingAssetDecimals,
           input.aTokenName,
           input.aTokenSymbol,
+          input.params
+        )
+      );
+
+    address pTokenProxyAddress =
+      _initTokenWithProxy(
+        input.pTokenImpl,
+        abi.encodeWithSelector(
+          IInitializablePToken.initialize.selector,
+          pool,
+          aTokenProxyAddress,
+          input.project,
+          IAaveIncentivesController(input.incentivesController),
+          input.underlyingAssetDecimals,
+          input.pTokenName,
+          input.pTokenSymbol,
           input.params
         )
       );
@@ -115,26 +132,30 @@ contract LendingPoolConfigurator is VersionedInitializable, ILendingPoolConfigur
       );
 
     pool.initReserve(
+      input.project,
       input.underlyingAsset,
       aTokenProxyAddress,
+      pTokenProxyAddress,
       stableDebtTokenProxyAddress,
       variableDebtTokenProxyAddress,
-      input.interestRateStrategyAddress
+      input.interestRateStrategyAddress,
+      input.projectBorrower
     );
 
     DataTypes.ReserveConfigurationMap memory currentConfig =
-      pool.getConfiguration(input.underlyingAsset);
+      pool.getConfiguration(input.project);
 
     currentConfig.setDecimals(input.underlyingAssetDecimals);
 
     currentConfig.setActive(true);
     currentConfig.setFrozen(false);
 
-    pool.setConfiguration(input.underlyingAsset, currentConfig.data);
+    pool.setConfiguration(input.project, currentConfig.data);
 
     emit ReserveInitialized(
-      input.underlyingAsset,
+      input.project,
       aTokenProxyAddress,
+      pTokenProxyAddress,
       stableDebtTokenProxyAddress,
       variableDebtTokenProxyAddress,
       input.interestRateStrategyAddress
@@ -179,7 +200,7 @@ contract LendingPoolConfigurator is VersionedInitializable, ILendingPoolConfigur
     ILendingPool cachedPool = pool;
 
     DataTypes.ReserveData memory reserveData = cachedPool.getReserveData(input.asset);
-     
+
     (, , , uint256 decimals, ) = cachedPool.getConfiguration(input.asset).getParamsMemory();
 
     bytes memory encodedCall = abi.encodeWithSelector(
@@ -477,11 +498,116 @@ contract LendingPoolConfigurator is VersionedInitializable, ILendingPoolConfigur
   function _checkNoLiquidity(address asset) internal view {
     DataTypes.ReserveData memory reserveData = pool.getReserveData(asset);
 
-    uint256 availableLiquidity = IERC20Detailed(asset).balanceOf(reserveData.aTokenAddress);
+    uint256 availableLiquidity = IERC20Detailed(reserveData.underlyingAsset).balanceOf(reserveData.aTokenAddress);
 
     require(
       availableLiquidity == 0 && reserveData.currentLiquidityRate == 0,
       Errors.LPC_RESERVE_LIQUIDITY_NOT_0
     );
+  }
+
+  function updateProjectBorrower(address project, address borrower) external onlyPoolAdmin {
+    pool.updateProjectBorrower(project, borrower);
+  }
+
+  /**
+   * @dev Enables deposits on a reserve
+   * @param project The address of the project contrat associated to the reserve
+   **/
+  function enableDepositsOnReserve(address project)
+    external
+    onlyPoolAdmin
+  {
+    DataTypes.ReserveConfigurationMap memory currentConfig = pool.getConfiguration(project);
+
+    currentConfig.setDepositsEnabled(true);
+
+    pool.setConfiguration(project, currentConfig.data);
+
+    emit DepositsEnabledOnReserve(project, true);
+  }
+
+  /**
+   * @dev Disables deposits on a reserve
+   * @param project The address of the project contrat associated to the reserve
+   **/
+  function disableDepositsOnReserve(address project) external onlyPoolAdmin {
+    DataTypes.ReserveConfigurationMap memory currentConfig = pool.getConfiguration(project);
+
+    currentConfig.setDepositsEnabled(false);
+
+    pool.setConfiguration(project, currentConfig.data);
+
+    emit DepositsDisabledOnReserve(project);
+  }
+
+  function updateReserveRates(
+    address project,
+    uint128 newDespositRate,
+    uint128 newBorrowRate
+    ) external onlyPoolAdmin {
+      pool.updateInterestRates(project, newDespositRate, newBorrowRate);
+  }
+
+  /**
+   * @dev Enables Withdrawals on a reserve
+   * @param project The address of the project contrat associated to the reserve
+   **/
+  function enableWithdrawalsOnReserve(address project)
+    external
+    onlyPoolAdmin
+  {
+    DataTypes.ReserveConfigurationMap memory currentConfig = pool.getConfiguration(project);
+
+    currentConfig.setWithdrawalsEnabled(true);
+
+    pool.setConfiguration(project, currentConfig.data);
+
+    emit WithdrawalsEnabledOnReserve(project, true);
+  }
+
+  /**
+   * @dev Disables Withdrawals on a reserve
+   * @param project The address of the project contrat associated to the reserve
+   **/
+  function disableWithdrawalsOnReserve(address project) external onlyPoolAdmin {
+    DataTypes.ReserveConfigurationMap memory currentConfig = pool.getConfiguration(project);
+
+    currentConfig.setWithdrawalsEnabled(false);
+
+    pool.setConfiguration(project, currentConfig.data);
+
+    emit WithdrawalsDisabledOnReserve(project);
+  }
+
+  /**
+   * @dev Enables interest Withdrawals on a reserve
+   * @param project The address of the project contrat associated to the reserve
+   **/
+  function enableInterestWithdrawalsOnReserve(address project)
+    external
+    onlyPoolAdmin
+  {
+    DataTypes.ReserveConfigurationMap memory currentConfig = pool.getConfiguration(project);
+
+    currentConfig.setInterestWithdrawalsEnabled(true);
+
+    pool.setConfiguration(project, currentConfig.data);
+
+    emit WithdrawalsEnabledOnReserve(project, true);
+  }
+
+  /**
+   * @dev Disables interest Withdrawals on a reserve
+   * @param project The address of the project contrat associated to the reserve
+   **/
+  function disableInterestWithdrawalsOnReserve(address project) external onlyPoolAdmin {
+    DataTypes.ReserveConfigurationMap memory currentConfig = pool.getConfiguration(project);
+
+    currentConfig.setInterestWithdrawalsEnabled(false);
+
+    pool.setConfiguration(project, currentConfig.data);
+
+    emit WithdrawalsDisabledOnReserve(project);
   }
 }

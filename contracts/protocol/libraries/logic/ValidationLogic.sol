@@ -39,11 +39,12 @@ library ValidationLogic {
    * @param amount The amount to be deposited
    */
   function validateDeposit(DataTypes.ReserveData storage reserve, uint256 amount) external view {
-    (bool isActive, bool isFrozen, , ) = reserve.configuration.getFlags();
+    (bool isActive, bool isFrozen, , , bool depositsEnabled) = reserve.configuration.getFlags();
 
     require(amount != 0, Errors.VL_INVALID_AMOUNT);
     require(isActive, Errors.VL_NO_ACTIVE_RESERVE);
     require(!isFrozen, Errors.VL_RESERVE_FROZEN);
+    require(depositsEnabled, Errors.VL_DEPOSITS_DISABLED);
   }
 
   /**
@@ -52,54 +53,46 @@ library ValidationLogic {
    * @param amount The amount to be withdrawn
    * @param userBalance The balance of the user
    * @param reservesData The reserves state
-   * @param userConfig The user configuration
-   * @param reserves The addresses of the reserves
-   * @param reservesCount The number of reserves
-   * @param oracle The price oracle
    */
   function validateWithdraw(
     address reserveAddress,
     uint256 amount,
     uint256 userBalance,
-    mapping(address => DataTypes.ReserveData) storage reservesData,
-    DataTypes.UserConfigurationMap storage userConfig,
-    mapping(uint256 => address) storage reserves,
-    uint256 reservesCount,
-    address oracle
+    mapping(address => DataTypes.ReserveData) storage reservesData
   ) external view {
     require(amount != 0, Errors.VL_INVALID_AMOUNT);
     require(amount <= userBalance, Errors.VL_NOT_ENOUGH_AVAILABLE_USER_BALANCE);
 
-    (bool isActive, , , ) = reservesData[reserveAddress].configuration.getFlags();
-    require(isActive, Errors.VL_NO_ACTIVE_RESERVE);
+    (bool isActive, , , , ) = reservesData[reserveAddress].configuration.getFlags();
+    bool withdrawalsEnabled = reservesData[reserveAddress].configuration.getWithdrawalsEnabled();
 
-    require(
-      GenericLogic.balanceDecreaseAllowed(
-        reserveAddress,
-        msg.sender,
-        amount,
-        reservesData,
-        userConfig,
-        reserves,
-        reservesCount,
-        oracle
-      ),
-      Errors.VL_TRANSFER_NOT_ALLOWED
-    );
+    require(isActive, Errors.VL_NO_ACTIVE_RESERVE);
+    require(withdrawalsEnabled, Errors.VL_WITHDRAWALS_DISABLED);
+  }
+
+  /**
+   * @dev Validates a withdraw action
+   * @param reserveAddress The address of the reserve
+   * @param userBalance The balance of the user
+   * @param reservesData The reserves state
+   */
+  function validateInterestWithdraw(
+    address reserveAddress,
+    uint256 userBalance,
+    mapping(address => DataTypes.ReserveData) storage reservesData
+  ) external view {
+
+    (bool isActive, , , , ) = reservesData[reserveAddress].configuration.getFlags();
+    bool withdrawalsEnabled = reservesData[reserveAddress].configuration.getInterestWithdrawalsEnabled();
+
+    require(isActive, Errors.VL_NO_ACTIVE_RESERVE);
+    require(withdrawalsEnabled, Errors.VL_WITHDRAWALS_DISABLED);
   }
 
   struct ValidateBorrowLocalVars {
-    uint256 currentLtv;
-    uint256 currentLiquidationThreshold;
-    uint256 amountOfCollateralNeededETH;
-    uint256 userCollateralBalanceETH;
-    uint256 userBorrowBalanceETH;
-    uint256 availableLiquidity;
-    uint256 healthFactor;
     bool isActive;
     bool isFrozen;
     bool borrowingEnabled;
-    bool stableRateBorrowingEnabled;
   }
 
   /**
@@ -108,13 +101,8 @@ library ValidationLogic {
    * @param reserve The reserve state from which the user is borrowing
    * @param userAddress The address of the user
    * @param amount The amount to be borrowed
-   * @param amountInETH The amount to be borrowed, in ETH
-   * @param interestRateMode The interest rate mode at which the user is borrowing
-   * @param maxStableLoanPercent The max amount of the liquidity that can be borrowed at stable rate, in percentage
-   * @param reservesData The state of all the reserves
-   * @param userConfig The state of the user for the specific reserve
-   * @param reserves The addresses of all the active reserves
-   * @param oracle The price oracle
+   * @param projectBorrower The address of the project borrower
+   * @param emergencyAdmin The addresses of emergency admin
    */
 
   function validateBorrow(
@@ -122,18 +110,12 @@ library ValidationLogic {
     DataTypes.ReserveData storage reserve,
     address userAddress,
     uint256 amount,
-    uint256 amountInETH,
-    uint256 interestRateMode,
-    uint256 maxStableLoanPercent,
-    mapping(address => DataTypes.ReserveData) storage reservesData,
-    DataTypes.UserConfigurationMap storage userConfig,
-    mapping(uint256 => address) storage reserves,
-    uint256 reservesCount,
-    address oracle
+    address projectBorrower,
+    address emergencyAdmin
   ) external view {
     ValidateBorrowLocalVars memory vars;
 
-    (vars.isActive, vars.isFrozen, vars.borrowingEnabled, vars.stableRateBorrowingEnabled) = reserve
+    (vars.isActive, vars.isFrozen, vars.borrowingEnabled, , ) = reserve
       .configuration
       .getFlags();
 
@@ -141,75 +123,9 @@ library ValidationLogic {
     require(!vars.isFrozen, Errors.VL_RESERVE_FROZEN);
     require(amount != 0, Errors.VL_INVALID_AMOUNT);
 
+    require(userAddress == projectBorrower || userAddress == emergencyAdmin, "Only project borrower or emergency admin");
+
     require(vars.borrowingEnabled, Errors.VL_BORROWING_NOT_ENABLED);
-
-    //validate interest rate mode
-    require(
-      uint256(DataTypes.InterestRateMode.VARIABLE) == interestRateMode ||
-        uint256(DataTypes.InterestRateMode.STABLE) == interestRateMode,
-      Errors.VL_INVALID_INTEREST_RATE_MODE_SELECTED
-    );
-
-    (
-      vars.userCollateralBalanceETH,
-      vars.userBorrowBalanceETH,
-      vars.currentLtv,
-      vars.currentLiquidationThreshold,
-      vars.healthFactor
-    ) = GenericLogic.calculateUserAccountData(
-      userAddress,
-      reservesData,
-      userConfig,
-      reserves,
-      reservesCount,
-      oracle
-    );
-
-    require(vars.userCollateralBalanceETH > 0, Errors.VL_COLLATERAL_BALANCE_IS_0);
-
-    require(
-      vars.healthFactor > GenericLogic.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      Errors.VL_HEALTH_FACTOR_LOWER_THAN_LIQUIDATION_THRESHOLD
-    );
-
-    //add the current already borrowed amount to the amount requested to calculate the total collateral needed.
-    vars.amountOfCollateralNeededETH = vars.userBorrowBalanceETH.add(amountInETH).percentDiv(
-      vars.currentLtv
-    ); //LTV is calculated in percentage
-
-    require(
-      vars.amountOfCollateralNeededETH <= vars.userCollateralBalanceETH,
-      Errors.VL_COLLATERAL_CANNOT_COVER_NEW_BORROW
-    );
-
-    /**
-     * Following conditions need to be met if the user is borrowing at a stable rate:
-     * 1. Reserve must be enabled for stable rate borrowing
-     * 2. Users cannot borrow from the reserve if their collateral is (mostly) the same currency
-     *    they are borrowing, to prevent abuses.
-     * 3. Users will be able to borrow only a portion of the total available liquidity
-     **/
-
-    if (interestRateMode == uint256(DataTypes.InterestRateMode.STABLE)) {
-      //check if the borrow mode is stable and if stable rate borrowing is enabled on this reserve
-
-      require(vars.stableRateBorrowingEnabled, Errors.VL_STABLE_BORROWING_NOT_ENABLED);
-
-      require(
-        !userConfig.isUsingAsCollateral(reserve.id) ||
-          reserve.configuration.getLtv() == 0 ||
-          amount > IERC20(reserve.aTokenAddress).balanceOf(userAddress),
-        Errors.VL_COLLATERAL_SAME_AS_BORROWING_CURRENCY
-      );
-
-      vars.availableLiquidity = IERC20(asset).balanceOf(reserve.aTokenAddress);
-
-      //calculate the max available loan size in stable rate mode as a percentage of the
-      //available liquidity
-      uint256 maxLoanSizeStable = vars.availableLiquidity.percentMul(maxStableLoanPercent);
-
-      require(amount <= maxLoanSizeStable, Errors.VL_AMOUNT_BIGGER_THAN_MAX_LOAN_SIZE_STABLE);
-    }
   }
 
   /**
@@ -263,7 +179,7 @@ library ValidationLogic {
     uint256 variableDebt,
     DataTypes.InterestRateMode currentRateMode
   ) external view {
-    (bool isActive, bool isFrozen, , bool stableRateEnabled) = reserve.configuration.getFlags();
+    (bool isActive, bool isFrozen, , bool stableRateEnabled, ) = reserve.configuration.getFlags();
 
     require(isActive, Errors.VL_NO_ACTIVE_RESERVE);
     require(!isFrozen, Errors.VL_RESERVE_FROZEN);
@@ -307,7 +223,7 @@ library ValidationLogic {
     IERC20 variableDebtToken,
     address aTokenAddress
   ) external view {
-    (bool isActive, , , ) = reserve.configuration.getFlags();
+    (bool isActive, , , , ) = reserve.configuration.getFlags();
 
     require(isActive, Errors.VL_NO_ACTIVE_RESERVE);
 

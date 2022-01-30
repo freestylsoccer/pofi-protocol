@@ -8,9 +8,13 @@ export const strategyWAVAX: IReserveParams = {
   liquidationThreshold: '6500',
   liquidationBonus: '11000',
   borrowingEnabled: true,
+  depositsEnabled: true,
+  withdrawalsEnabled: true,
   stableBorrowRateEnabled: false,
+  interestWithdrawalsEnabled: true,
   reserveDecimals: '18',
   aTokenImpl: eContractid.AToken,
+  pTokenImpl: eContractid.PToken,
   reserveFactor: '1500',
 };
 
@@ -20,9 +24,13 @@ export const strategyWETH: IReserveParams = {
   liquidationThreshold: '8250',
   liquidationBonus: '10500',
   borrowingEnabled: true,
+  depositsEnabled: true,
+  withdrawalsEnabled: true,
   stableBorrowRateEnabled: false,
+  interestWithdrawalsEnabled: true,
   reserveDecimals: '18',
   aTokenImpl: eContractid.AToken,
+  pTokenImpl: eContractid.PToken,
   reserveFactor: '1000',
 };
 
@@ -32,9 +40,13 @@ export const strategyWBTC: IReserveParams = {
   liquidationThreshold: '7500',
   liquidationBonus: '10500',
   borrowingEnabled: true,
+  depositsEnabled: true,
+  withdrawalsEnabled: true,
   stableBorrowRateEnabled: false,
+  interestWithdrawalsEnabled: true,
   reserveDecimals: '8',
   aTokenImpl: eContractid.AToken,
+  pTokenImpl: eContractid.PToken,
   reserveFactor: '1000',
 };
 
@@ -44,9 +56,13 @@ export const strategyAAVE: IReserveParams = {
   liquidationThreshold: '6500',
   liquidationBonus: '11000',
   borrowingEnabled: false,
+  depositsEnabled: true,
+  withdrawalsEnabled: true,
   stableBorrowRateEnabled: false,
+  interestWithdrawalsEnabled: true,
   reserveDecimals: '18',
   aTokenImpl: eContractid.AToken,
+  pTokenImpl: eContractid.PToken,
   reserveFactor: '2000',
 };
 
@@ -56,9 +72,13 @@ export const strategyDAI: IReserveParams = {
   liquidationThreshold: '8000',
   liquidationBonus: '10500',
   borrowingEnabled: true,
+  depositsEnabled: true,
+  withdrawalsEnabled: true,
   stableBorrowRateEnabled: false,
+  interestWithdrawalsEnabled: true,
   reserveDecimals: '18',
   aTokenImpl: eContractid.AToken,
+  pTokenImpl: eContractid.PToken,
   reserveFactor: '1000',
 };
 
@@ -68,9 +88,13 @@ export const strategyUSDT: IReserveParams = {
   liquidationThreshold: '0',
   liquidationBonus: '0',
   borrowingEnabled: true,
+  depositsEnabled: true,
+  withdrawalsEnabled: true,
   stableBorrowRateEnabled: false,
+  interestWithdrawalsEnabled: true,
   reserveDecimals: '6',
   aTokenImpl: eContractid.AToken,
+  pTokenImpl: eContractid.PToken,
   reserveFactor: '1000',
 };
 
@@ -80,8 +104,12 @@ export const strategyUSDC: IReserveParams = {
   liquidationThreshold: '8000',
   liquidationBonus: '10500',
   borrowingEnabled: true,
+  depositsEnabled: true,
+  withdrawalsEnabled: true,
   stableBorrowRateEnabled: false,
+  interestWithdrawalsEnabled: true,
   reserveDecimals: '6',
   aTokenImpl: eContractid.AToken,
+  pTokenImpl: eContractid.PToken,
   reserveFactor: '1000',
 };

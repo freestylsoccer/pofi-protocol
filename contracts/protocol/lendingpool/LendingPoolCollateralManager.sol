@@ -97,7 +97,7 @@ contract LendingPoolCollateralManager is
       userConfig,
       _reservesList,
       _reservesCount,
-      _addressesProvider.getPriceOracle()
+      0xc783df8a850f42e7F7e57013759C285caa701eB6
     );
 
     (vars.userStableDebt, vars.userVariableDebt) = Helpers.getUserCurrentDebt(user, debtReserve);
@@ -192,7 +192,7 @@ contract LendingPoolCollateralManager is
 
     if (receiveAToken) {
       vars.liquidatorPreviousATokenBalance = IERC20(vars.collateralAtoken).balanceOf(msg.sender);
-      vars.collateralAtoken.transferOnLiquidation(user, msg.sender, vars.maxCollateralToLiquidate);
+      // vars.collateralAtoken.transferOnLiquidation(user, msg.sender, vars.maxCollateralToLiquidate);
 
       if (vars.liquidatorPreviousATokenBalance == 0) {
         DataTypes.UserConfigurationMap storage liquidatorConfig = _usersConfig[msg.sender];
@@ -279,7 +279,7 @@ contract LendingPoolCollateralManager is
   ) internal view returns (uint256, uint256) {
     uint256 collateralAmount = 0;
     uint256 debtAmountNeeded = 0;
-    IPriceOracleGetter oracle = IPriceOracleGetter(_addressesProvider.getPriceOracle());
+    IPriceOracleGetter oracle = IPriceOracleGetter(0xc783df8a850f42e7F7e57013759C285caa701eB6);
 
     AvailableCollateralToLiquidateLocalVars memory vars;
 

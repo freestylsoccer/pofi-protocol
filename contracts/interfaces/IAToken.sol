@@ -68,25 +68,13 @@ interface IAToken is IERC20, IScaledBalanceToken, IInitializableAToken {
   function mintToTreasury(uint256 amount, uint256 index) external;
 
   /**
-   * @dev Transfers aTokens in the event of a borrow being liquidated, in case the liquidators reclaims the aToken
-   * @param from The address getting liquidated, current owner of the aTokens
-   * @param to The recipient
-   * @param value The amount of tokens getting transferred
-   **/
-  function transferOnLiquidation(
-    address from,
-    address to,
-    uint256 value
-  ) external;
-
-  /**
    * @dev Transfers the underlying asset to `target`. Used by the LendingPool to transfer
    * assets in borrow(), withdraw() and flashLoan()
    * @param user The recipient of the underlying
    * @param amount The amount getting transferred
    * @return The amount transferred
    **/
-  function transferUnderlyingTo(address user, uint256 amount) external returns (uint256);
+  function transferUnderlyingTo(address asset, address user, uint256 amount) external returns (uint256);
 
   /**
    * @dev Invoked to execute actions on the aToken side after a repayment.
@@ -96,12 +84,12 @@ interface IAToken is IERC20, IScaledBalanceToken, IInitializableAToken {
   function handleRepayment(address user, uint256 amount) external;
 
   /**
-   * @dev Returns the address of the incentives controller contract
-   **/
-  function getIncentivesController() external view returns (IAaveIncentivesController);
-
-  /**
    * @dev Returns the address of the underlying asset of this aToken (E.g. WETH for aWETH)
    **/
   function UNDERLYING_ASSET_ADDRESS() external view returns (address);
+
+  /**
+   * @dev function to proccess the interest withdral by users
+   **/
+  function withdrawInterest(address user, address receiverOfUnderlying, uint256 index) external returns (uint256);
 }

@@ -9,61 +9,39 @@ interface IUiPoolDataProviderV3 {
     address underlyingAsset;
     string name;
     string symbol;
-    uint256 decimals;
-    uint256 baseLTVasCollateral;
-    uint256 reserveLiquidationThreshold;
-    uint256 reserveLiquidationBonus;
-    uint256 reserveFactor;
-    bool usageAsCollateralEnabled;
+    uint256 decimals;    
     bool borrowingEnabled;
     bool stableBorrowRateEnabled;
+    bool depositsEnabled;
+    bool withdrawalsEnabled;
+    bool interestWithdrawalsEnabled;
     bool isActive;
     bool isFrozen;
     // base data
     uint128 liquidityIndex;
-    uint128 variableBorrowIndex;
     uint128 liquidityRate;
-    uint128 variableBorrowRate;
     uint128 stableBorrowRate;
     uint40 lastUpdateTimestamp;
     address aTokenAddress;
+    address pTokenAddress;
     address stableDebtTokenAddress;
-    address variableDebtTokenAddress;
-    address interestRateStrategyAddress;
+    address project;
+    uint40 projectStartDate;
+    uint40 projectEndDate;
+    bool projectStatus;
     //
     uint256 availableLiquidity;
-    uint256 totalPrincipalStableDebt;
     uint256 averageStableRate;
     uint256 stableDebtLastUpdateTimestamp;
-    uint256 totalScaledVariableDebt;
-    uint256 priceInMarketReferenceCurrency;
-    uint256 variableRateSlope1;
-    uint256 variableRateSlope2;
-    uint256 stableRateSlope1;
-    uint256 stableRateSlope2;
-    // v3
-    bool isPaused;
-    uint128 accruedToTreasury;
-    uint128 unbacked;
-    uint128 isolationModeTotalDebt;
-    //
-    uint256 debtCeiling;
-    uint256 debtCeilingDecimals;
-    uint8 eModeCategoryId;
-    uint256 borrowCap;
-    uint256 supplyCap; 
-    // eMode
-    uint16 eModeLtv;
-    uint16 eModeLiquidationThreshold;
-    uint16 eModeLiquidationBonus;
-    address eModePriceSource;
-    string eModeLabel;
-    bool borrowableInIsolation;
   }
 
   struct UserReserveData {
+    address project;
     address underlyingAsset;
     uint256 scaledATokenBalance;
+    uint256 scaledPTokenBalance;
+    uint256 aTokenBalance;
+    uint256 pTokenBalance;
     bool usageAsCollateralEnabledOnUser;
     uint256 stableBorrowRate;
     uint256 scaledVariableDebt;
@@ -87,8 +65,7 @@ interface IUiPoolDataProviderV3 {
     external
     view
     returns (
-      AggregatedReserveData[] memory,
-      BaseCurrencyInfo memory
+      AggregatedReserveData[] memory
     );
 
   function getUserReservesData(ILendingPoolAddressesProvider provider, address user)

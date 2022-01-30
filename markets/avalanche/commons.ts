@@ -16,6 +16,7 @@ import { ICommonConfiguration, eAvalancheNetwork } from '../../helpers/types';
 export const CommonsConfig: ICommonConfiguration = {
   MarketId: 'Commons',
   ATokenNamePrefix: 'Aave Avalanche Market',
+  PTokenNamePrefix: 'Aave Avalanche Market',
   StableDebtTokenNamePrefix: 'Aave Avalanche Market stable debt',
   VariableDebtTokenNamePrefix: 'Aave Avalanche Market variable debt',
   SymbolPrefix: 'v',

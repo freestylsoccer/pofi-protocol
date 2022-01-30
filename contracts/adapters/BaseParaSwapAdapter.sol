@@ -42,7 +42,7 @@ abstract contract BaseParaSwapAdapter is FlashLoanReceiverBase, Ownable {
   constructor(
     ILendingPoolAddressesProvider addressesProvider
   ) public FlashLoanReceiverBase(addressesProvider) {
-    ORACLE = IPriceOracleGetter(addressesProvider.getPriceOracle());
+    ORACLE = IPriceOracleGetter(0xc783df8a850f42e7F7e57013759C285caa701eB6);
   }
 
   /**
@@ -105,10 +105,12 @@ abstract contract BaseParaSwapAdapter is FlashLoanReceiverBase, Ownable {
     reserveAToken.safeTransferFrom(user, address(this), amount);
 
     // withdraw reserve
+    /*
     require(
       LENDING_POOL.withdraw(reserve, amount, address(this)) == amount,
       'UNEXPECTED_AMOUNT_WITHDRAWN'
     );
+    */
   }
 
   /**

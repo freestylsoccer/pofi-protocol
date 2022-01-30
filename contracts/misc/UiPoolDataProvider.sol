@@ -24,13 +24,16 @@ contract UiPoolDataProvider is IUiPoolDataProvider {
   using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
   using UserConfiguration for DataTypes.UserConfigurationMap;
 
-  address public constant MOCK_USD_ADDRESS = 0x10F7Fc1F91Ba351f9C629c5947AD69bD03C05b96;
-  IAaveIncentivesController public immutable override incentivesController;
-  IPriceOracleGetter public immutable oracle;
+  // address public constant MOCK_USD_ADDRESS = 0x10F7Fc1F91Ba351f9C629c5947AD69bD03C05b96;
+  // IAaveIncentivesController public immutable override incentivesController;
+  // IPriceOracleGetter public immutable oracle;
+  // Public variable of type address
+  address public manager;
 
-  constructor(IAaveIncentivesController _incentivesController, IPriceOracleGetter _oracle) public {
-    incentivesController = _incentivesController;
-    oracle = _oracle;
+  constructor() public {
+    // incentivesController = _incentivesController;
+    // oracle = _oracle;
+    manager = msg.sender;
   }
 
   function getInterestRateStrategySlopes(DefaultReserveInterestRateStrategy interestRateStrategy)
@@ -92,7 +95,7 @@ contract UiPoolDataProvider is IUiPoolDataProvider {
       reserveData.stableDebtTokenAddress = baseData.stableDebtTokenAddress;
       reserveData.variableDebtTokenAddress = baseData.variableDebtTokenAddress;
       reserveData.interestRateStrategyAddress = baseData.interestRateStrategyAddress;
-      reserveData.priceInEth = oracle.getAssetPrice(reserveData.underlyingAsset);
+      // reserveData.priceInEth = oracle.getAssetPrice(reserveData.underlyingAsset);
 
       reserveData.availableLiquidity = IERC20Detailed(reserveData.underlyingAsset).balanceOf(
         reserveData.aTokenAddress
@@ -123,7 +126,10 @@ contract UiPoolDataProvider is IUiPoolDataProvider {
         reserveData.isActive,
         reserveData.isFrozen,
         reserveData.borrowingEnabled,
-        reserveData.stableBorrowRateEnabled
+        reserveData.stableBorrowRateEnabled,
+        reserveData.depositsEnabled,
+        reserveData.withdrawalsEnabled,
+        reserveData.interestWithdrawalsEnabled
       ) = baseData.configuration.getFlagsMemory();
       reserveData.usageAsCollateralEnabled = reserveData.baseLTVasCollateral != 0;
       (
@@ -134,7 +140,7 @@ contract UiPoolDataProvider is IUiPoolDataProvider {
       ) = getInterestRateStrategySlopes(
         DefaultReserveInterestRateStrategy(reserveData.interestRateStrategyAddress)
       );
-
+      /*
       // incentives
       if (address(0) != address(incentivesController)) {
         (
@@ -142,27 +148,30 @@ contract UiPoolDataProvider is IUiPoolDataProvider {
           reserveData.aEmissionPerSecond,
           reserveData.aIncentivesLastUpdateTimestamp
         ) = incentivesController.getAssetData(reserveData.aTokenAddress);
-     
+
         (
           reserveData.sTokenIncentivesIndex,
           reserveData.sEmissionPerSecond,
           reserveData.sIncentivesLastUpdateTimestamp
         ) = incentivesController.getAssetData(reserveData.stableDebtTokenAddress);
-     
+
         (
           reserveData.vTokenIncentivesIndex,
           reserveData.vEmissionPerSecond,
           reserveData.vIncentivesLastUpdateTimestamp
         ) = incentivesController.getAssetData(reserveData.variableDebtTokenAddress);
       }
+      */
     }
 
     uint256 emissionEndTimestamp;
+    /*
     if (address(0) != address(incentivesController)) {
       emissionEndTimestamp = incentivesController.DISTRIBUTION_END();
     }
+    */
 
-    return (reservesData, oracle.getAssetPrice(MOCK_USD_ADDRESS), emissionEndTimestamp);
+    return (reservesData, 0x00, emissionEndTimestamp);
   }
 
   function getUserReservesData(ILendingPoolAddressesProvider provider, address user)
@@ -180,6 +189,7 @@ contract UiPoolDataProvider is IUiPoolDataProvider {
 
     for (uint256 i = 0; i < reserves.length; i++) {
       DataTypes.ReserveData memory baseData = lendingPool.getReserveData(reserves[i]);
+      /*
       // incentives
       if (address(0) != address(incentivesController)) {
         userReservesData[i].aTokenincentivesUserIndex = incentivesController.getUserAssetData(
@@ -195,6 +205,7 @@ contract UiPoolDataProvider is IUiPoolDataProvider {
           baseData.stableDebtTokenAddress
         );
       }
+      */
       // user reserve data
       userReservesData[i].underlyingAsset = reserves[i];
       userReservesData[i].scaledATokenBalance = IAToken(baseData.aTokenAddress).scaledBalanceOf(
@@ -223,9 +234,11 @@ contract UiPoolDataProvider is IUiPoolDataProvider {
     }
 
     uint256 userUnclaimedRewards;
+    /*
     if (address(0) != address(incentivesController)) {
       userUnclaimedRewards = incentivesController.getUserUnclaimedRewards(user);
     }
+    */
 
     return (userReservesData, userUnclaimedRewards);
   }
@@ -266,7 +279,7 @@ contract UiPoolDataProvider is IUiPoolDataProvider {
       reserveData.stableDebtTokenAddress = baseData.stableDebtTokenAddress;
       reserveData.variableDebtTokenAddress = baseData.variableDebtTokenAddress;
       reserveData.interestRateStrategyAddress = baseData.interestRateStrategyAddress;
-      reserveData.priceInEth = oracle.getAssetPrice(reserveData.underlyingAsset);
+      // reserveData.priceInEth = oracle.getAssetPrice(reserveData.underlyingAsset);
 
       reserveData.availableLiquidity = IERC20Detailed(reserveData.underlyingAsset).balanceOf(
         reserveData.aTokenAddress
@@ -297,7 +310,10 @@ contract UiPoolDataProvider is IUiPoolDataProvider {
         reserveData.isActive,
         reserveData.isFrozen,
         reserveData.borrowingEnabled,
-        reserveData.stableBorrowRateEnabled
+        reserveData.stableBorrowRateEnabled,
+        reserveData.depositsEnabled,
+        reserveData.withdrawalsEnabled,
+        reserveData.interestWithdrawalsEnabled
       ) = baseData.configuration.getFlagsMemory();
       reserveData.usageAsCollateralEnabled = reserveData.baseLTVasCollateral != 0;
       (
@@ -308,29 +324,31 @@ contract UiPoolDataProvider is IUiPoolDataProvider {
       ) = getInterestRateStrategySlopes(
         DefaultReserveInterestRateStrategy(reserveData.interestRateStrategyAddress)
       );
-
+      /*
       // incentives
       if (address(0) != address(incentivesController)) {
         (
           reserveData.aTokenIncentivesIndex,
           reserveData.aEmissionPerSecond,
           reserveData.aIncentivesLastUpdateTimestamp
-        ) = incentivesController.getAssetData(reserveData.aTokenAddress); 
-     
+        ) = incentivesController.getAssetData(reserveData.aTokenAddress);
+
         (
           reserveData.sTokenIncentivesIndex,
           reserveData.sEmissionPerSecond,
           reserveData.sIncentivesLastUpdateTimestamp
         ) = incentivesController.getAssetData(reserveData.stableDebtTokenAddress);
-     
+
         (
           reserveData.vTokenIncentivesIndex,
           reserveData.vEmissionPerSecond,
           reserveData.vIncentivesLastUpdateTimestamp
         ) = incentivesController.getAssetData(reserveData.variableDebtTokenAddress);
       }
+      */
 
       if (user != address(0)) {
+        /*
         // incentives
         if (address(0) != address(incentivesController)) {
           userReservesData[i].aTokenincentivesUserIndex = incentivesController.getUserAssetData(
@@ -346,6 +364,7 @@ contract UiPoolDataProvider is IUiPoolDataProvider {
             reserveData.stableDebtTokenAddress
           );
         }
+        */
         // user reserve data
         userReservesData[i].underlyingAsset = reserveData.underlyingAsset;
         userReservesData[i].scaledATokenBalance = IAToken(reserveData.aTokenAddress)
@@ -380,7 +399,7 @@ contract UiPoolDataProvider is IUiPoolDataProvider {
     }
 
     IncentivesControllerData memory incentivesControllerData;
-
+    /*
     if (address(0) != address(incentivesController)) {
       if (user != address(0)) {
         incentivesControllerData.userUnclaimedRewards = incentivesController
@@ -388,11 +407,12 @@ contract UiPoolDataProvider is IUiPoolDataProvider {
       }
       incentivesControllerData.emissionEndTimestamp = incentivesController.DISTRIBUTION_END();
     }
+    */
 
     return (
       reservesData,
       userReservesData,
-      oracle.getAssetPrice(MOCK_USD_ADDRESS),
+      0x00,
       incentivesControllerData
     );
   }

@@ -71,6 +71,7 @@ export enum eContractid {
   MockFlashLoanReceiver = 'MockFlashLoanReceiver',
   WalletBalanceProvider = 'WalletBalanceProvider',
   AToken = 'AToken',
+  PToken = 'PToken',
   MockAToken = 'MockAToken',
   DelegationAwareAToken = 'DelegationAwareAToken',
   MockStableDebtToken = 'MockStableDebtToken',
@@ -84,8 +85,6 @@ export enum eContractid {
   StableAndVariableTokensHelper = 'StableAndVariableTokensHelper',
   ATokensAndRatesHelper = 'ATokensAndRatesHelper',
   UiPoolDataProvider = 'UiPoolDataProvider',
-  UiPoolDataProviderV2 = 'UiPoolDataProviderV2',
-  UiPoolDataProviderV2V3 = 'UiPoolDataProviderV2V3',
   WETHGateway = 'WETHGateway',
   WETH = 'WETH',
   WETHMocked = 'WETHMocked',
@@ -100,8 +99,7 @@ export enum eContractid {
   MockParaSwapAugustus = 'MockParaSwapAugustus',
   MockParaSwapAugustusRegistry = 'MockParaSwapAugustusRegistry',
   ParaSwapLiquiditySwapAdapter = 'ParaSwapLiquiditySwapAdapter',
-  UiIncentiveDataProviderV2V3 = 'UiIncentiveDataProviderV2V3',
-  UiIncentiveDataProviderV2 = 'UiIncentiveDataProviderV2',
+  Project = "Project"
 }
 
 /*
@@ -193,6 +191,10 @@ export enum ProtocolErrors {
   RC_INVALID_DECIMALS = '70',
   RC_INVALID_RESERVE_FACTOR = '71',
   LPAPR_INVALID_ADDRESSES_PROVIDER_ID = '72',
+  VL_DEPOSITS_DISABLED = '82',
+  VL_WITHDRAWALS_DISABLED = '83',
+  AT_CALLER_MUST_BE_ATOKEN = '84',
+  AT_NOT_INTEREST_BALANCE_IS_0= '85',
 
   // old
 
@@ -257,9 +259,21 @@ export interface iAssetBase<T> {
   WAVAX: T;
 }
 
+export interface iAssetBase2<T> {
+  DAI: T;
+  TUSD: T;
+  USDC: T;
+  USDT: T;
+  SUSD: T;
+  BUSD: T;
+  USD: T;
+}
+
 export type iAssetsWithoutETH<T> = Omit<iAssetBase<T>, 'ETH'>;
 
 export type iAssetsWithoutUSD<T> = Omit<iAssetBase<T>, 'USD'>;
+
+export type iAssetsWithoutETH2<T> = Omit<iAssetBase2<T>, 'ETH'>;
 
 export type iAavePoolAssets<T> = Pick<
   iAssetsWithoutUSD<T>,
@@ -284,6 +298,16 @@ export type iAavePoolAssets<T> = Pick<
   | 'REN'
   | 'ENJ'
   | 'xSUSHI'
+>;
+
+export type iPofiPoolAssets<T> = Pick<
+  iAssetsWithoutUSD<T>,
+  | 'DAI'
+  | 'TUSD'
+  | 'USDC'
+  | 'USDT'
+  | 'SUSD'
+  | 'BUSD'
 >;
 
 export type iLpPoolAssets<T> = Pick<
@@ -331,6 +355,7 @@ export type iMultiPoolsAssets<T> = iAssetCommon<T> | iAavePoolAssets<T>;
 export type iAavePoolTokens<T> = Omit<iAavePoolAssets<T>, 'ETH'>;
 
 export type iAssetAggregatorBase<T> = iAssetsWithoutETH<T>;
+export type iAssetAggregatorBase2<T> = iAssetsWithoutETH2<T>;
 
 export enum TokenContractId {
   DAI = 'DAI',
@@ -376,8 +401,27 @@ export enum TokenContractId {
   WAVAX = 'WAVAX',
 }
 
+export enum TokenContractId2 {
+  DAI = 'DAI',
+  TUSD = 'TUSD',
+  USDC = 'USDC',
+  USDT = 'USDT',
+  SUSD = 'SUSD',
+  BUSD = 'BUSD',
+  USD = 'USD',
+}
+export enum ProjectContracId {
+  ProjectDAI = 'ProjectDAI',
+  ProjectTUSD = 'ProjectTUSD',
+  ProjectUSDC = 'ProjectUSDC',
+  ProjectUSDT = 'ProjectUSDT',
+  ProjectSUSD = 'ProjectSUSD',
+  ProjectBUSD = 'ProjectBUSD',
+  ProjectUSD = 'ProjectUSD',
+}
 export interface IReserveParams extends IReserveBorrowParams, IReserveCollateralParams {
   aTokenImpl: eContractid;
+  pTokenImpl: eContractid;
   reserveFactor: string;
   strategy: IInterestRateStrategyParams;
 }
@@ -400,6 +444,9 @@ export interface IReserveBorrowParams {
   // stableRateSlope1: string;
   // stableRateSlope2: string;
   borrowingEnabled: boolean;
+  depositsEnabled: boolean;
+  withdrawalsEnabled: boolean;
+  interestWithdrawalsEnabled: boolean,
   stableBorrowRateEnabled: boolean;
   reserveDecimals: string;
 }
@@ -483,6 +530,10 @@ export interface IMocksConfig {
   AllAssetsInitialPrices: iAssetBase<string>;
 }
 
+export interface IMocksConfig2 {
+  AllAssetsInitialPrices: iAssetBase2<string>;
+}
+
 export interface ILendingRateOracleRatesCommon {
   [token: string]: ILendingRate;
 }
@@ -494,6 +545,7 @@ export interface ILendingRate {
 export interface IBaseConfiguration {
   MarketId: string;
   ATokenNamePrefix: string;
+  PTokenNamePrefix: string;
   StableDebtTokenNamePrefix: string;
   VariableDebtTokenNamePrefix: string;
   SymbolPrefix: string;
@@ -532,8 +584,17 @@ export interface ICommonConfiguration extends IBaseConfiguration {
   Mocks: IMocksConfig;
 }
 
+export interface ICommonConfiguration2 extends IBaseConfiguration {
+  ReservesConfig: iMultiPoolsAssets<IReserveParams>;
+  Mocks: IMocksConfig2;
+}
+
 export interface IAaveConfiguration extends ICommonConfiguration {
   ReservesConfig: iAavePoolAssets<IReserveParams>;
+}
+
+export interface IPofiConfiguration extends ICommonConfiguration2 {
+  ReservesConfig: iPofiPoolAssets<IReserveParams>;
 }
 
 export interface IAmmConfiguration extends ICommonConfiguration {
@@ -556,4 +617,4 @@ export interface ITokenAddress {
   [token: string]: tEthereumAddress;
 }
 
-export type PoolConfiguration = ICommonConfiguration | IAaveConfiguration;
+export type PoolConfiguration = ICommonConfiguration | IAaveConfiguration | IPofiConfiguration;

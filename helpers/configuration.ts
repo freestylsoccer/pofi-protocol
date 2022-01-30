@@ -11,6 +11,7 @@ import AaveConfig from '../markets/aave';
 import MaticConfig from '../markets/matic';
 import AvalancheConfig from '../markets/avalanche';
 import AmmConfig from '../markets/amm';
+import { PofiConfig } from '../markets/pofi';
 
 import { CommonsConfig } from '../markets/aave/commons';
 import { DRE, filterMapBy } from './misc-utils';
@@ -23,7 +24,8 @@ export enum ConfigNames {
   Aave = 'Aave',
   Matic = 'Matic',
   Amm = 'Amm',
-  Avalanche = 'Avalanche'
+  Avalanche = 'Avalanche',
+  Pofi = 'Pofi'
 }
 
 export const loadPoolConfig = (configName: ConfigNames): PoolConfiguration => {
@@ -38,6 +40,8 @@ export const loadPoolConfig = (configName: ConfigNames): PoolConfiguration => {
         return AvalancheConfig;
     case ConfigNames.Commons:
       return CommonsConfig;
+    case ConfigNames.Pofi:
+      return PofiConfig;
     default:
       throw new Error(
         `Unsupported pool configuration: ${configName} is not one of the supported configs ${Object.values(

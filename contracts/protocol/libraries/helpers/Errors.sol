@@ -103,6 +103,11 @@ library Errors {
   string public constant LP_NOT_CONTRACT = '78';
   string public constant SDT_STABLE_DEBT_OVERFLOW = '79';
   string public constant SDT_BURN_EXCEEDS_BALANCE = '80';
+  string public constant LP_INVALID_ASSET = '81';
+  string public constant VL_DEPOSITS_DISABLED = '82';
+  string public constant VL_WITHDRAWALS_DISABLED = '83';
+  string public constant AT_CALLER_MUST_BE_ATOKEN = '84';
+  string public constant AT_NOT_INTEREST_BALANCE_IS_0 = '85';
 
   enum CollateralManagerErrors {
     NO_ERROR,

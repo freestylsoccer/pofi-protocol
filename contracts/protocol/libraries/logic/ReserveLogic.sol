@@ -5,6 +5,7 @@ import {SafeMath} from '../../../dependencies/openzeppelin/contracts/SafeMath.so
 import {IERC20} from '../../../dependencies/openzeppelin/contracts/IERC20.sol';
 import {SafeERC20} from '../../../dependencies/openzeppelin/contracts/SafeERC20.sol';
 import {IAToken} from '../../../interfaces/IAToken.sol';
+import {IPToken} from '../../../interfaces/IPToken.sol';
 import {IStableDebtToken} from '../../../interfaces/IStableDebtToken.sol';
 import {IVariableDebtToken} from '../../../interfaces/IVariableDebtToken.sol';
 import {IReserveInterestRateStrategy} from '../../../interfaces/IReserveInterestRateStrategy.sol';
@@ -163,19 +164,25 @@ library ReserveLogic {
    **/
   function init(
     DataTypes.ReserveData storage reserve,
+    address asset,
     address aTokenAddress,
+    address pTokenAddress,
     address stableDebtTokenAddress,
     address variableDebtTokenAddress,
-    address interestRateStrategyAddress
+    address interestRateStrategyAddress,
+    address projectBorrower
   ) external {
     require(reserve.aTokenAddress == address(0), Errors.RL_RESERVE_ALREADY_INITIALIZED);
 
     reserve.liquidityIndex = uint128(WadRayMath.ray());
     reserve.variableBorrowIndex = uint128(WadRayMath.ray());
     reserve.aTokenAddress = aTokenAddress;
+    reserve.pTokenAddress = pTokenAddress;
     reserve.stableDebtTokenAddress = stableDebtTokenAddress;
     reserve.variableDebtTokenAddress = variableDebtTokenAddress;
     reserve.interestRateStrategyAddress = interestRateStrategyAddress;
+    reserve.underlyingAsset = asset;
+    reserve.projectBorrower = projectBorrower;
   }
 
   struct UpdateInterestRatesLocalVars {
@@ -243,6 +250,38 @@ library ReserveLogic {
       vars.newLiquidityRate,
       vars.newStableRate,
       vars.newVariableRate,
+      reserve.liquidityIndex,
+      reserve.variableBorrowIndex
+    );
+  }
+
+  /**
+   * @dev Updates the reserve current stable borrow rate, the current variable borrow rate and the current liquidity rate
+   * @param reserve The address of the reserve to be updated
+   * @param depositRate The new deposit rate
+   * @param borrowRate The new borrow rate
+   **/
+  function updateProjectInterestRates(
+    DataTypes.ReserveData storage reserve,
+    address reserveAddress,
+    uint128 depositRate,
+    uint128 borrowRate
+  ) internal {
+
+    require(depositRate <= type(uint128).max, Errors.RL_LIQUIDITY_RATE_OVERFLOW);
+    require(borrowRate <= type(uint128).max, Errors.RL_STABLE_BORROW_RATE_OVERFLOW);
+
+    reserve.currentLiquidityRate = depositRate;
+    reserve.currentStableBorrowRate = borrowRate;
+    reserve.currentVariableBorrowRate = borrowRate;
+
+    // reserve.liquidityIndex = 1029743763527958380640640224;
+
+    emit ReserveDataUpdated(
+      reserveAddress,
+      depositRate,
+      borrowRate,
+      borrowRate,
       reserve.liquidityIndex,
       reserve.variableBorrowIndex
     );
@@ -321,6 +360,7 @@ library ReserveLogic {
 
     if (vars.amountToMint != 0) {
       IAToken(reserve.aTokenAddress).mintToTreasury(vars.amountToMint, newLiquidityIndex);
+      // IPToken(reserve.pTokenAddress).mintToTreasury(vars.amountToMint, newLiquidityIndex);
     }
   }
 
@@ -351,6 +391,7 @@ library ReserveLogic {
       require(newLiquidityIndex <= type(uint128).max, Errors.RL_LIQUIDITY_INDEX_OVERFLOW);
 
       reserve.liquidityIndex = uint128(newLiquidityIndex);
+      // reserve.liquidityIndex = 1029743763527958380640640224;
 
       //as the liquidity rate might come only from stable rate loans, we need to ensure
       //that there is actual variable debt before accumulating

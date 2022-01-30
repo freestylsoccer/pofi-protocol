@@ -5,6 +5,7 @@ import {IERC20} from '../../dependencies/openzeppelin/contracts/IERC20.sol';
 import {SafeERC20} from '../../dependencies/openzeppelin/contracts/SafeERC20.sol';
 import {ILendingPool} from '../../interfaces/ILendingPool.sol';
 import {IAToken} from '../../interfaces/IAToken.sol';
+import {IPToken} from '../../interfaces/IPToken.sol';
 import {WadRayMath} from '../libraries/math/WadRayMath.sol';
 import {Errors} from '../libraries/helpers/Errors.sol';
 import {VersionedInitializable} from '../libraries/aave-upgradeability/VersionedInitializable.sol';
@@ -39,6 +40,7 @@ contract AToken is
 
   ILendingPool internal _pool;
   address internal _treasury;
+  address internal _project;
   address internal _underlyingAsset;
   IAaveIncentivesController internal _incentivesController;
 
@@ -55,7 +57,7 @@ contract AToken is
    * @dev Initializes the aToken
    * @param pool The address of the lending pool where this aToken will be used
    * @param treasury The address of the Aave treasury, receiving the fees on this aToken
-   * @param underlyingAsset The address of the underlying asset of this aToken (E.g. WETH for aWETH)
+   * @param project The address of the proyect contrat associated to the reserve
    * @param incentivesController The smart contract managing potential incentives distribution
    * @param aTokenDecimals The decimals of the aToken, same as the underlying asset's
    * @param aTokenName The name of the aToken
@@ -64,7 +66,7 @@ contract AToken is
   function initialize(
     ILendingPool pool,
     address treasury,
-    address underlyingAsset,
+    address project,
     IAaveIncentivesController incentivesController,
     uint8 aTokenDecimals,
     string calldata aTokenName,
@@ -94,12 +96,13 @@ contract AToken is
 
     _pool = pool;
     _treasury = treasury;
-    _underlyingAsset = underlyingAsset;
+    _project = project;
+    _underlyingAsset = _pool.getUnderlyingAsset(_project);
     _incentivesController = incentivesController;
 
     emit Initialized(
-      underlyingAsset,
-      address(pool),
+      _underlyingAsset,
+      address(_pool),
       treasury,
       address(incentivesController),
       aTokenDecimals,
@@ -107,6 +110,33 @@ contract AToken is
       aTokenSymbol,
       params
     );
+  }
+
+  function withdrawInterest(
+    address user,
+    address receiverOfUnderlying,
+    uint256 index
+  ) external override onlyLendingPool returns (uint256) {
+    address pToken = _pool.getPTokenAddress(_project);
+
+    uint256 capital = IPToken(pToken).balanceOf(user);
+    uint256 balance = balanceOf(user);
+    // available interest to witdraw
+    uint256 amount = balance.sub(capital);
+
+    require(balance > amount, Errors.AT_NOT_INTEREST_BALANCE_IS_0);
+
+    uint256 amountScaled = amount.rayDiv(index);
+    require(amountScaled != 0, Errors.CT_INVALID_BURN_AMOUNT);
+    _burn(user, amountScaled);
+
+    _underlyingAsset = _pool.getUnderlyingAsset(_project);
+    IERC20(_underlyingAsset).safeTransfer(receiverOfUnderlying, amount);
+
+    emit Transfer(user, address(0), amount);
+    emit Burn(user, receiverOfUnderlying, amount, index);
+
+    return amount;
   }
 
   /**
@@ -127,7 +157,17 @@ contract AToken is
     require(amountScaled != 0, Errors.CT_INVALID_BURN_AMOUNT);
     _burn(user, amountScaled);
 
+    _underlyingAsset = _pool.getUnderlyingAsset(_project);
     IERC20(_underlyingAsset).safeTransfer(receiverOfUnderlying, amount);
+
+    // burn ptokens on withdrawls
+    address pToken = _pool.getPTokenAddress(_project);
+    uint256 capital = IPToken(pToken).balanceOf(user);
+    if (amount == type(uint256).max || amount >= capital) {
+      IPToken(pToken).burn(user, capital);
+    } else {
+      IPToken(pToken).burn(user, amount);
+    }
 
     emit Transfer(user, address(0), amount);
     emit Burn(user, receiverOfUnderlying, amount, index);
@@ -151,6 +191,10 @@ contract AToken is
     uint256 amountScaled = amount.rayDiv(index);
     require(amountScaled != 0, Errors.CT_INVALID_MINT_AMOUNT);
     _mint(user, amountScaled);
+
+    // mint pTokens to track captial deposited
+    address pToken = _pool.getPTokenAddress(_project);
+    IPToken(pToken).mint(user, amountScaled);
 
     emit Transfer(address(0), user, amount);
     emit Mint(user, amount, index);
@@ -182,25 +226,6 @@ contract AToken is
   }
 
   /**
-   * @dev Transfers aTokens in the event of a borrow being liquidated, in case the liquidators reclaims the aToken
-   * - Only callable by the LendingPool
-   * @param from The address getting liquidated, current owner of the aTokens
-   * @param to The recipient
-   * @param value The amount of tokens getting transferred
-   **/
-  function transferOnLiquidation(
-    address from,
-    address to,
-    uint256 value
-  ) external override onlyLendingPool {
-    // Being a normal transfer, the Transfer() and BalanceTransfer() are emitted
-    // so no need to emit a specific event here
-    _transfer(from, to, value, false);
-
-    emit Transfer(from, to, value);
-  }
-
-  /**
    * @dev Calculates the balance of the user: principal balance + interest generated by the principal
    * @param user The user whose balance is calculated
    * @return The balance of the user
@@ -211,7 +236,7 @@ contract AToken is
     override(IncentivizedERC20, IERC20)
     returns (uint256)
   {
-    return super.balanceOf(user).rayMul(_pool.getReserveNormalizedIncome(_underlyingAsset));
+    return super.balanceOf(user).rayMul(_pool.getReserveNormalizedIncome(_project));
   }
 
   /**
@@ -252,7 +277,8 @@ contract AToken is
       return 0;
     }
 
-    return currentSupplyScaled.rayMul(_pool.getReserveNormalizedIncome(_underlyingAsset));
+    return currentSupplyScaled.rayMul(_pool.getReserveNormalizedIncome(_project));
+    // return currentSupplyScaled;
   }
 
   /**
@@ -292,26 +318,19 @@ contract AToken is
   }
 
   /**
-   * @dev Returns the address of the incentives controller contract
-   **/
-  function getIncentivesController() external view override returns (IAaveIncentivesController) {
-    return _getIncentivesController();
-  }
-
-  /**
    * @dev Transfers the underlying asset to `target`. Used by the LendingPool to transfer
    * assets in borrow(), withdraw() and flashLoan()
    * @param target The recipient of the aTokens
    * @param amount The amount getting transferred
    * @return The amount transferred
    **/
-  function transferUnderlyingTo(address target, uint256 amount)
+  function transferUnderlyingTo(address asset, address target, uint256 amount)
     external
     override
     onlyLendingPool
     returns (uint256)
   {
-    IERC20(_underlyingAsset).safeTransfer(target, amount);
+    IERC20(asset).safeTransfer(target, amount);
     return amount;
   }
 
@@ -342,6 +361,7 @@ contract AToken is
     bytes32 r,
     bytes32 s
   ) external {
+    require(owner != spender, 'OWNER_EQUAL_TO_SPENDER');
     require(owner != address(0), 'INVALID_OWNER');
     //solium-disable-next-line
     require(block.timestamp <= deadline, 'INVALID_EXPIRATION');
@@ -373,18 +393,26 @@ contract AToken is
     uint256 amount,
     bool validate
   ) internal {
-    address underlyingAsset = _underlyingAsset;
+    address project = _project;
+    // address underlyingAsset = _underlyingAsset;
     ILendingPool pool = _pool;
 
-    uint256 index = pool.getReserveNormalizedIncome(underlyingAsset);
+    address pToken = pool.getPTokenAddress(project);
+
+    uint256 index = pool.getReserveNormalizedIncome(project);
 
     uint256 fromBalanceBefore = super.balanceOf(from).rayMul(index);
+    // uint256 fromBalanceBefore = super.balanceOf(from);
     uint256 toBalanceBefore = super.balanceOf(to).rayMul(index);
+    // uint256 toBalanceBefore = super.balanceOf(to);
 
     super._transfer(from, to, amount.rayDiv(index));
 
+    IPToken(pToken).burn(from, amount);
+    IPToken(pToken).mint(to, amount);
+
     if (validate) {
-      pool.finalizeTransfer(underlyingAsset, from, to, amount, fromBalanceBefore, toBalanceBefore);
+      pool.finalizeTransfer(project, from, to, amount, fromBalanceBefore, toBalanceBefore);
     }
 
     emit BalanceTransfer(from, to, amount, index);

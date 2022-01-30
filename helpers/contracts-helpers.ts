@@ -21,6 +21,7 @@ import {
   eAvalancheNetwork,
 } from './types';
 import { MintableERC20 } from '../types/MintableERC20';
+import { Project } from '../types/Project';
 import { Artifact } from 'hardhat/types';
 import { Artifact as BuidlerArtifact } from '@nomiclabs/buidler/types';
 import { verifyEtherscanContract } from './etherscan-verification';
@@ -32,6 +33,7 @@ import { ZERO_ADDRESS } from './constants';
 import { getDefenderRelaySigner, usingDefender } from './defender-utils';
 
 export type MockTokenMap = { [symbol: string]: MintableERC20 };
+export type MockProjectMap = { [symbol: string]: Project };
 
 export const registerContractInJsonDb = async (contractId: string, contractInstance: Contract) => {
   const currentNetwork = DRE.network.name;
@@ -192,10 +194,7 @@ export const getOptionalParamAddressPerNetwork = (
   return getParamPerNetwork(param, network);
 };
 
-export const getParamPerPool = <T>(
-  { proto, amm, matic, avalanche }: iParamsPerPool<T>,
-  pool: AavePools
-) => {
+export const getParamPerPool = <T>({ proto, amm, matic, avalanche }: iParamsPerPool<T>, pool: AavePools) => {
   switch (pool) {
     case AavePools.proto:
       return proto;
@@ -381,10 +380,15 @@ export const verifyContract = async (
   instance: Contract,
   args: (string | string[])[]
 ) => {
-  if (usingTenderly()) {
-    await verifyAtTenderly(id, instance);
+  if (usingPolygon()) {
+    // await verifyAtPolygon(id, instance, args);
+    await verifyEtherscanContract(instance.address, args);
+  } else {
+    if (usingTenderly()) {
+      await verifyAtTenderly(id, instance);
+    }
+    await verifyEtherscanContract(instance.address, args);
   }
-  await verifyEtherscanContract(instance.address, args);
   return instance;
 };
 

@@ -15,8 +15,8 @@ interface ILendingPoolAddressesProvider {
   event EmergencyAdminUpdated(address indexed newAddress);
   event LendingPoolConfiguratorUpdated(address indexed newAddress);
   event LendingPoolCollateralManagerUpdated(address indexed newAddress);
-  event PriceOracleUpdated(address indexed newAddress);
-  event LendingRateOracleUpdated(address indexed newAddress);
+  // event PriceOracleUpdated(address indexed newAddress);
+  // event LendingRateOracleUpdated(address indexed newAddress);
   event ProxyCreated(bytes32 id, address indexed newAddress);
   event AddressSet(bytes32 id, address indexed newAddress, bool hasProxy);
 
@@ -38,9 +38,9 @@ interface ILendingPoolAddressesProvider {
 
   function setLendingPoolConfiguratorImpl(address configurator) external;
 
-  function getLendingPoolCollateralManager() external view returns (address);
+  // function getLendingPoolCollateralManager() external view returns (address);
 
-  function setLendingPoolCollateralManager(address manager) external;
+  // function setLendingPoolCollateralManager(address manager) external;
 
   function getPoolAdmin() external view returns (address);
 
@@ -50,6 +50,7 @@ interface ILendingPoolAddressesProvider {
 
   function setEmergencyAdmin(address admin) external;
 
+  /*
   function getPriceOracle() external view returns (address);
 
   function setPriceOracle(address priceOracle) external;
@@ -57,4 +58,5 @@ interface ILendingPoolAddressesProvider {
   function getLendingRateOracle() external view returns (address);
 
   function setLendingRateOracle(address lendingRateOracle) external;
+  */
 }

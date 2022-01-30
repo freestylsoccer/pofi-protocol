@@ -6,18 +6,21 @@ import {
   tStringTokenSmallUnits,
   AavePools,
   TokenContractId,
+  TokenContractId2,
   iMultiPoolsAssets,
   IReserveParams,
   PoolConfiguration,
   eEthereumNetwork,
 } from './types';
 import { MintableERC20 } from '../types/MintableERC20';
+import { Project } from '../types/Project';
 import { MockContract } from 'ethereum-waffle';
 import { ConfigNames, getReservesConfigByPool, loadPoolConfig } from './configuration';
 import { getFirstSigner } from './contracts-getters';
 import {
   AaveProtocolDataProviderFactory,
   ATokenFactory,
+  PTokenFactory,
   ATokensAndRatesHelperFactory,
   AaveOracleFactory,
   DefaultReserveInterestRateStrategyFactory,
@@ -51,10 +54,8 @@ import {
   WETH9MockedFactory,
   WETHGatewayFactory,
   FlashLiquidationAdapterFactory,
-  UiPoolDataProviderV2Factory,
+  ProjectFactory,
   UiPoolDataProviderV2V3Factory,
-  UiIncentiveDataProviderV2V3,
-  UiIncentiveDataProviderV2Factory,
 } from '../types';
 import {
   withSaveAndVerify,
@@ -73,66 +74,33 @@ import { LendingPoolLibraryAddresses } from '../types/LendingPoolFactory';
 import { UiPoolDataProvider } from '../types';
 import { eNetwork } from './types';
 
-export const deployUiIncentiveDataProviderV2 = async (verify?: boolean) =>
-  withSaveAndVerify(
-    await new UiIncentiveDataProviderV2Factory(await getFirstSigner()).deploy(),
-    eContractid.UiIncentiveDataProviderV2,
-    [],
-    verify
-  );
-
-export const deployUiIncentiveDataProviderV2V3 = async (verify?: boolean) => {
-  const id = eContractid.UiIncentiveDataProviderV2V3;
-  const instance = await deployContract<UiIncentiveDataProviderV2V3>(id, []);
+export const deployUiPoolDataProvider = async (verify?: boolean) => {
+  const id = eContractid.UiPoolDataProvider;
+  // const args: string[] = [];
+  const instance = await deployContract<UiPoolDataProvider>(id, []);
   if (verify) {
     await verifyContract(id, instance, []);
   }
   return instance;
 };
-
-export const deployUiPoolDataProviderV2 = async (
-  chainlinkAggregatorProxy: string,
-  chainlinkEthUsdAggregatorProxy: string,
-  verify?: boolean
-) =>
+/*
+export const deployUiPoolDataProvider = async (verify?: boolean) =>
   withSaveAndVerify(
-    await new UiPoolDataProviderV2Factory(await getFirstSigner()).deploy(
-      chainlinkAggregatorProxy,
-      chainlinkEthUsdAggregatorProxy
-    ),
+    await new UiPoolDataProviderFactory(await getFirstSigner()).deploy(),
     eContractid.UiPoolDataProvider,
-    [chainlinkAggregatorProxy, chainlinkEthUsdAggregatorProxy],
+    [],
     verify
   );
-
+*/
 export const deployUiPoolDataProviderV2V3 = async (
-  chainlinkAggregatorProxy: string,
-  chainlinkEthUsdAggregatorProxy: string,
   verify?: boolean
 ) =>
   withSaveAndVerify(
-    await new UiPoolDataProviderV2V3Factory(await getFirstSigner()).deploy(
-      chainlinkAggregatorProxy,
-      chainlinkEthUsdAggregatorProxy
-    ),
+    await new UiPoolDataProviderV2V3Factory(await getFirstSigner()).deploy(),
     eContractid.UiPoolDataProvider,
-    [chainlinkAggregatorProxy, chainlinkEthUsdAggregatorProxy],
+    [],
     verify
   );
-
-export const deployUiPoolDataProvider = async (
-  [incentivesController, aaveOracle]: [tEthereumAddress, tEthereumAddress],
-  verify?: boolean
-) => {
-  const id = eContractid.UiPoolDataProvider;
-  const args: string[] = [incentivesController, aaveOracle];
-  const instance = await deployContract<UiPoolDataProvider>(id, args);
-  if (verify) {
-    await verifyContract(id, instance, args);
-  }
-  return instance;
-};
-
 const readArtifact = async (id: string) => {
   if (DRE.network.name === eEthereumNetwork.buidlerevm) {
     return buidlerReadArtifact(DRE.config.paths.artifacts, id);
@@ -353,6 +321,16 @@ export const deployMintableERC20 = async (
     verify
   );
 
+  export const deployMockProjects = async (
+    args: [string, string, string],
+    verify?: boolean
+  ): Promise<Project> =>
+  withSaveAndVerify(
+    await new ProjectFactory(await getFirstSigner()).deploy(...args),
+    eContractid.Project,
+    args,
+    verify
+  );
 export const deployMintableDelegationERC20 = async (
   args: [string, string, string],
   verify?: boolean
@@ -462,6 +440,15 @@ export const deployGenericATokenImpl = async (verify: boolean) =>
     verify
   );
 
+export const deployGenericPTokenImpl = async (verify: boolean) =>
+  withSaveAndVerify(
+    await new PTokenFactory(await getFirstSigner()).deploy(),
+    eContractid.PToken,
+    [],
+    verify
+  );
+
+
 export const deployDelegationAwareAToken = async (
   [pool, underlyingAssetAddress, treasuryAddress, incentivesController, name, symbol]: [
     tEthereumAddress,
@@ -502,12 +489,31 @@ export const deployDelegationAwareATokenImpl = async (verify: boolean) =>
     verify
   );
 
+export const deployAllMockProjects = async (verify?: boolean) => {
+  const tokens: { [symbol: string]: Project } = {};
+
+  for (const tokenSymbol of Object.keys(TokenContractId2)) {
+    let name = `Pofi Project ${tokenSymbol}`;
+    let startDate = '1643327644';
+    let endDate = '1644929644';
+
+    tokens[tokenSymbol] = await deployMockProjects([
+      name,
+      startDate,
+      endDate,
+    ]);
+    await registerContractInJsonDb(`Project${tokenSymbol}`, tokens[tokenSymbol]);
+  }
+
+  return tokens;
+};
+
 export const deployAllMockTokens = async (verify?: boolean) => {
   const tokens: { [symbol: string]: MockContract | MintableERC20 } = {};
 
   const protoConfigData = getReservesConfigByPool(AavePools.proto);
 
-  for (const tokenSymbol of Object.keys(TokenContractId)) {
+  for (const tokenSymbol of Object.keys(TokenContractId2)) {
     let decimals = '18';
 
     let configData = (<any>protoConfigData)[tokenSymbol];
@@ -704,6 +710,17 @@ export const chooseATokenDeployment = (id: eContractid) => {
   }
 };
 
+export const choosePTokenDeployment = (id: eContractid) => {
+  switch (id) {
+    case eContractid.PToken:
+      return deployGenericPTokenImpl;
+    case eContractid.DelegationAwareAToken:
+      return deployDelegationAwareATokenImpl;
+    default:
+      throw Error(`Missing aToken implementation deployment script for: ${id}`);
+  }
+};
+
 export const deployATokenImplementations = async (
   pool: ConfigNames,
   reservesConfig: { [key: string]: IReserveParams },
@@ -719,12 +736,14 @@ export const deployATokenImplementations = async (
       return acc;
     }, new Set<eContractid>()),
   ];
+  // console.log(aTokenImplementations);
 
   for (let x = 0; x < aTokenImplementations.length; x++) {
     const aTokenAddress = getOptionalParamAddressPerNetwork(
       poolConfig[aTokenImplementations[x].toString()],
       network
     );
+
     if (!notFalsyOrZeroAddress(aTokenAddress)) {
       const deployImplementationMethod = chooseATokenDeployment(aTokenImplementations[x]);
       console.log(`Deploying implementation`, aTokenImplementations[x]);
@@ -749,6 +768,39 @@ export const deployATokenImplementations = async (
     await deployGenericVariableDebtToken(verify);
   }
 };
+
+
+export const deployPTokenImplementations = async (
+  pool: ConfigNames,
+  reservesConfig: { [key: string]: IReserveParams },
+  verify = false
+) => {
+  const poolConfig = loadPoolConfig(pool);
+  const network = <eNetwork>DRE.network.name;
+  // console.log(reservesConfig);
+  // Obtain the different AToken implementations of all reserves inside the Market config
+  const pTokenImplementations = [
+    ...Object.entries(reservesConfig).reduce<Set<eContractid>>((acc, [, entry]) => {
+      acc.add(entry.pTokenImpl);
+      return acc;
+    }, new Set<eContractid>()),
+  ];
+  // console.log(pTokenImplementations);
+
+  for (let x = 0; x < pTokenImplementations.length; x++) {
+    const aTokenAddress = getOptionalParamAddressPerNetwork(
+      poolConfig[pTokenImplementations[x].toString()],
+      network
+    );
+    // console.log(aTokenAddress);
+    if (!notFalsyOrZeroAddress(aTokenAddress)) {
+      const deployImplementationMethod = choosePTokenDeployment(pTokenImplementations[x]);
+      console.log(`Deploying implementation`, pTokenImplementations[x]);
+      await deployImplementationMethod(verify);
+    }
+  }
+};
+
 
 export const deployRateStrategy = async (
   strategyName: string,

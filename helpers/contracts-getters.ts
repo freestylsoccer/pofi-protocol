@@ -1,6 +1,7 @@
 import {
   AaveProtocolDataProviderFactory,
   ATokenFactory,
+  PTokenFactory,
   ATokensAndRatesHelperFactory,
   AaveOracleFactory,
   DefaultReserveInterestRateStrategyFactory,
@@ -33,13 +34,24 @@ import {
   WETH9MockedFactory,
   WETHGatewayFactory,
   FlashLiquidationAdapterFactory,
+  ProjectFactory,
+  UiPoolDataProviderV2V3Factory,
 } from '../types';
 import { IERC20DetailedFactory } from '../types/IERC20DetailedFactory';
-import { getEthersSigners, MockTokenMap } from './contracts-helpers';
+import { getEthersSigners, MockTokenMap, MockProjectMap } from './contracts-helpers';
 import { DRE, getDb, notFalsyOrZeroAddress, omit } from './misc-utils';
-import { eContractid, PoolConfiguration, tEthereumAddress, TokenContractId } from './types';
+import { eContractid, PoolConfiguration, tEthereumAddress, TokenContractId, TokenContractId2, ProjectContracId } from './types';
 
 export const getFirstSigner = async () => (await getEthersSigners())[0];
+
+export const getUiPoolDataProvider = async (address?: tEthereumAddress) =>
+  await UiPoolDataProviderV2V3Factory.connect(
+    address ||
+      (
+        await getDb().get(`${eContractid.UiPoolDataProvider}.${DRE.network.name}`).value()
+      ).address,
+    await getFirstSigner()
+  );
 
 export const getLendingPoolAddressesProvider = async (address?: tEthereumAddress) => {
   return await LendingPoolAddressesProviderFactory.connect(
@@ -84,6 +96,12 @@ export const getAToken = async (address?: tEthereumAddress) =>
     await getFirstSigner()
   );
 
+export const getPToken = async (address?: tEthereumAddress) =>
+  await PTokenFactory.connect(
+    address || (await getDb().get(`${eContractid.PToken}.${DRE.network.name}`).value()).address,
+    await getFirstSigner()
+  );
+
 export const getStableDebtToken = async (address?: tEthereumAddress) =>
   await StableDebtTokenFactory.connect(
     address ||
@@ -110,6 +128,15 @@ export const getMintableERC20 = async (address: tEthereumAddress) =>
       ).address,
     await getFirstSigner()
   );
+
+export const getMintableProject = async (address: tEthereumAddress) =>
+  await ProjectFactory.connect(
+    address ||
+      (
+        await getDb().get(`${eContractid.Project}.${DRE.network.name}`).value()
+      ).address,
+    await getFirstSigner()
+);
 
 export const getIErc20Detailed = async (address: tEthereumAddress) =>
   await IERC20DetailedFactory.connect(
@@ -175,7 +202,7 @@ export const getMockedTokens = async (config: PoolConfiguration) => {
 
 export const getAllMockedTokens = async () => {
   const db = getDb();
-  const tokens: MockTokenMap = await Object.keys(TokenContractId).reduce<Promise<MockTokenMap>>(
+  const tokens: MockTokenMap = await Object.keys(TokenContractId2).reduce<Promise<MockTokenMap>>(
     async (acc, tokenSymbol) => {
       const accumulator = await acc;
       const address = db.get(`${tokenSymbol.toUpperCase()}.${DRE.network.name}`).value().address;
@@ -185,6 +212,21 @@ export const getAllMockedTokens = async () => {
     Promise.resolve({})
   );
   return tokens;
+};
+
+export const getAllMockedProjects = async () => {
+  const db = getDb();
+  const projects: MockProjectMap = await Object.keys(ProjectContracId).reduce<Promise<MockProjectMap>>(
+    async (acc, tokenSymbol) => {
+      const accumulator = await acc;
+
+      const address = db.get(`${tokenSymbol}.${DRE.network.name}`).value().address;
+      accumulator[tokenSymbol] = await getMintableProject(address);
+      return Promise.resolve(acc);
+    },
+    Promise.resolve({})
+  );
+  return projects;
 };
 
 export const getQuoteCurrencies = (oracleQuoteCurrency: string): string[] => {

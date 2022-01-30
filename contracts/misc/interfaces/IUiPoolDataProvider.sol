@@ -18,6 +18,9 @@ interface IUiPoolDataProvider {
     bool usageAsCollateralEnabled;
     bool borrowingEnabled;
     bool stableBorrowRateEnabled;
+    bool depositsEnabled;
+    bool withdrawalsEnabled;
+    bool interestWithdrawalsEnabled;
     bool isActive;
     bool isFrozen;
     // base data
@@ -78,7 +81,7 @@ interface IUiPoolDataProvider {
     view
     returns (address[] memory);
 
-  function incentivesController() external view returns (IAaveIncentivesController);
+  // function incentivesController() external view returns (IAaveIncentivesController);
 
   function getSimpleReservesData(ILendingPoolAddressesProvider provider)
     external
