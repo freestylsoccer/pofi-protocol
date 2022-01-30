@@ -61,12 +61,15 @@ const getCommonNetworkConfig = (networkName: eNetwork, networkId: number) => ({
   gasMultiplier: DEFAULT_GAS_MUL,
   gasPrice: NETWORKS_DEFAULT_GAS[networkName],
   chainId: networkId,
+  accounts: ['9f1938b2ec4ebcba7f6f6197c09eb68aa870f9b92417227c5903d7abd560c5f6']
+  /*
   accounts: {
     mnemonic: MNEMONIC,
     path: MNEMONIC_PATH,
     initialIndex: 0,
     count: 20,
   },
+  */
 });
 
 let forkMode;

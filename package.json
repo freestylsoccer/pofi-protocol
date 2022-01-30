@@ -29,6 +29,7 @@
     "dev:coverage": "buidler compile --force && buidler coverage --network coverage",
     "aave:evm:dev:migration": "npm run compile && hardhat aave:dev",
     "aave:docker:full:migration": "npm run compile && npm run hardhat:docker -- aave:mainnet --skip-registry",
+    "pofi:mumbai:dev:migration": "npm run compile && npm run hardhat:mumbai -- aave:dev",
     "aave:kovan:full:migration": "npm run compile && npm run hardhat:kovan -- aave:mainnet --skip-registry",
     "matic:mumbai:full:migration": "npm run compile && npm run hardhat:mumbai sidechain:mainnet -- --pool Matic --skip-registry",
     "matic:matic:full:migration": "npm run compile && npm run hardhat:matic sidechain:mainnet -- --pool Matic --skip-registry",
