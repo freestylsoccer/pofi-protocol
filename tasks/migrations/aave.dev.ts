@@ -22,7 +22,7 @@ task('aave:dev', 'Deploy development enviroment')
 
     console.log('2. Deploy mock projects');
     await localBRE.run('dev:deploy-mock-projects', { verify });
-*/
+
     console.log('3. Deploy address provider');
     await localBRE.run('dev:deploy-address-provider', { verify });
 
@@ -34,7 +34,7 @@ task('aave:dev', 'Deploy development enviroment')
 
     console.log('6. Deploy UI Pool Data Provider');
     await localBRE.run('dev:ui-pool-data-provider', { verify });
-
+*/
     console.log('\nFinished migration');
     printContracts();
   });

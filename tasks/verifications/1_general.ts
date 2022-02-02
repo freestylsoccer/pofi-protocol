@@ -18,6 +18,7 @@ import {
   getLendingPoolConfiguratorProxy,
   getLendingPoolImpl,
   getProxy,
+  getUiPoolDataProvider,
   getWalletProvider,
   getWETHGateway,
 } from '../../helpers/contracts-getters';
@@ -41,7 +42,7 @@ task('verify:general', 'Verify contracts at Etherscan')
       LendingPool,
       WethGateway,
     } = poolConfig as ICommonConfiguration;
-
+    
     const registryAddress = getParamPerNetwork(ProviderRegistry, network);
     const addressesProvider = await getLendingPoolAddressesProvider();
     const addressesProviderRegistry = notFalsyOrZeroAddress(registryAddress)
@@ -52,6 +53,11 @@ task('verify:general', 'Verify contracts at Etherscan')
 
     const lendingPoolProxy = await getProxy(lendingPoolAddress);
     const lendingPoolConfiguratorProxy = await getProxy(lendingPoolConfiguratorAddress);
+
+    const uiPoolDataProvider = await getUiPoolDataProvider();
+    // Test helpers
+    console.log('\n- Verifying  Aave  Provider Helpers...\n');
+    await verifyContract(eContractid.UiPoolDataProvider, uiPoolDataProvider, []);
 
     if (all) {
       const lendingPoolImplAddress = getParamPerNetwork(LendingPool, network);

@@ -9,8 +9,10 @@ interface IProject {
   function setFinished(bool val) external;
   function setStarDate(uint40 _startDate) external;
   function setEndDate(uint40 _endDate) external;
+  function updateLiquidityRate(uint256 _lquidityRate) external;
+  function updateBorrowRate(uint256 _borrowRate) external;
   function getProjectData()
     external
     view
-    returns(string memory, uint40, uint40, bool);
+    returns(string memory, uint40, uint40, bool, uint256, uint256);
 }

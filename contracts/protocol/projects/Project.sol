@@ -23,16 +23,23 @@ contract Project is Ownable, IProject, LendingPoolStorage {
   uint40 public startDate;
   uint40 public endDate;
   bool public status;
+  // used to display the liquidityRate and the borrowRate in UI when the project is initialized
+  uint256 public liquidityRate; // in ray
+  uint256 public borrowRate; // in ray
 
   constructor(
       string memory _name,
       uint40 _startDate,
-      uint40 _endDate
+      uint40 _endDate,
+      uint256 _liquidityRate,
+      uint256 _borrowRate
   ) public {
       name = _name;
       startDate = _startDate;
       endDate = _endDate;
       status = true;
+      liquidityRate = _liquidityRate;
+      borrowRate = _borrowRate;
   }
 
   modifier whenNotFinished() {
@@ -65,8 +72,25 @@ contract Project is Ownable, IProject, LendingPoolStorage {
       endDate = _endDate;
   }
 
-  function getProjectData() external view override returns(string memory, uint40, uint40, bool) {
-    return (name, startDate, endDate, status);
+  /**
+  * @dev update project liquidity rate
+  **/
+  function updateLiquidityRate(uint256 _liquidityRate) external override onlyOwner whenNotFinished {
+      liquidityRate = _liquidityRate;
+  }
+
+  /**
+  * @dev update project borrow rate
+  **/
+  function updateBorrowRate(uint256 _borrowRate) external override onlyOwner whenNotFinished {
+      borrowRate = _borrowRate;
+  }
+
+  /**
+  * @dev return project data
+  **/
+  function getProjectData() external view override returns(string memory, uint40, uint40, bool, uint256, uint256) {
+    return (name, startDate, endDate, status, liquidityRate, borrowRate);
   }
 
 }

@@ -84,11 +84,15 @@ export const deployProjects = async (deployer: Signer) => {
     let name = `Pofi Project ${tokenSymbol}`;
     let startDate = '1643327644';
     let endDate = '1644929644';
+    let liquidityRate = '150000000000000000000000000'; // 0.15
+    let borrowRate = '165000000000000000000000000'; // 0.165
 
     tokens[tokenSymbol] = await deployMockProjects([
       name,
       startDate,
       endDate,
+      liquidityRate,
+      borrowRate
     ]);
     await registerContractInJsonDb(`Project${tokenSymbol}`, tokens[tokenSymbol]);
   }

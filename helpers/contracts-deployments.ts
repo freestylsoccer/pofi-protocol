@@ -322,7 +322,7 @@ export const deployMintableERC20 = async (
   );
 
   export const deployMockProjects = async (
-    args: [string, string, string],
+    args: [string, string, string, string, string],
     verify?: boolean
   ): Promise<Project> =>
   withSaveAndVerify(
@@ -496,11 +496,15 @@ export const deployAllMockProjects = async (verify?: boolean) => {
     let name = `Pofi Project ${tokenSymbol}`;
     let startDate = '1643327644';
     let endDate = '1644929644';
+    let liquidityRate = '150000000000000000000000000'; // 0.15
+    let borrowRate = '165000000000000000000000000'; // 0.165
 
     tokens[tokenSymbol] = await deployMockProjects([
       name,
       startDate,
       endDate,
+      liquidityRate,
+      borrowRate
     ]);
     await registerContractInJsonDb(`Project${tokenSymbol}`, tokens[tokenSymbol]);
   }
