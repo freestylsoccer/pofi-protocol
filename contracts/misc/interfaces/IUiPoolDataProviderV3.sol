@@ -9,7 +9,7 @@ interface IUiPoolDataProviderV3 {
     address underlyingAsset;
     string name;
     string symbol;
-    uint256 decimals;    
+    uint256 decimals;
     bool borrowingEnabled;
     bool stableBorrowRateEnabled;
     bool depositsEnabled;
@@ -29,6 +29,8 @@ interface IUiPoolDataProviderV3 {
     uint40 projectStartDate;
     uint40 projectEndDate;
     bool projectStatus;
+    uint256 projectLiquidityRate;
+    uint256 projectBorrowRate;
     //
     uint256 availableLiquidity;
     uint256 averageStableRate;

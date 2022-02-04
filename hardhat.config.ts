@@ -34,7 +34,7 @@ const SKIP_LOAD = process.env.SKIP_LOAD === 'true';
 const DEFAULT_BLOCK_GAS_LIMIT = 8000000;
 const DEFAULT_GAS_MUL = 5;
 const HARDFORK = 'istanbul';
-const ETHERSCAN_KEY = 'JRA9TXNPE5PKDYPBG6M73MMY48Q3YF3664' || '';
+const ETHERSCAN_KEY = 'QSDJ2HH6U8U4JZ8S5JYP8FE2BV47K3I966' || '';
 const MNEMONIC_PATH = "m/44'/60'/0'/0";
 const MNEMONIC = process.env.MNEMONIC || '';
 const UNLIMITED_BYTECODE_SIZE = process.env.UNLIMITED_BYTECODE_SIZE === 'true';
@@ -145,6 +145,12 @@ const buidlerConfig: HardhatUserConfig = {
         initialIndex: 0,
         count: 20,
       },
+    },
+    bsc_testnet: {
+      url: "https://data-seed-prebsc-1-s1.binance.org:8545",
+      chainId: 97,
+      gasPrice: 20000000000,
+      accounts: ['9f1938b2ec4ebcba7f6f6197c09eb68aa870f9b92417227c5903d7abd560c5f6']
     },
   },
 };

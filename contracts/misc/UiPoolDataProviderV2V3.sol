@@ -80,7 +80,9 @@ contract UiPoolDataProviderV2V3 is IUiPoolDataProviderV3 {
         reserveData.name,
         reserveData.projectStartDate,
         reserveData.projectEndDate,
-        reserveData.projectStatus
+        reserveData.projectStatus,
+        reserveData.projectLiquidityRate,
+        reserveData.projectBorrowRate
       ) = project.getProjectData();
 
       // reserve current state
@@ -107,7 +109,7 @@ contract UiPoolDataProviderV2V3 is IUiPoolDataProviderV3 {
         ,
         ,
         reserveData.decimals,
-        
+
       ) = baseData.configuration.getParamsMemory();
 
       (

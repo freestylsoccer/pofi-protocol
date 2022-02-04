@@ -16,7 +16,7 @@ task('aave:dev', 'Deploy development enviroment')
     }
 
     console.log('Migration started\n');
-/*
+
     console.log('1. Deploy mock tokens');
     await localBRE.run('dev:deploy-mock-tokens', { verify: true });
 
@@ -34,7 +34,7 @@ task('aave:dev', 'Deploy development enviroment')
 
     console.log('6. Deploy UI Pool Data Provider');
     await localBRE.run('dev:ui-pool-data-provider', { verify });
-*/
+
     console.log('\nFinished migration');
     printContracts();
   });
