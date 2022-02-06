@@ -432,4 +432,19 @@ contract StableDebtToken is IStableDebtToken, DebtTokenBase {
       _incentivesController.handleAction(account, oldTotalSupply, oldAccountBalance);
     }
   }
+
+  /**
+   * @dev Calculates the current user debt balance
+   * @return The accumulated debt of the user
+   **/
+  function getUserDebt(address account) public view virtual override returns (uint256) {
+    uint256 accountBalance = super.balanceOf(account);
+    uint256 stableRate = _usersStableRate[account];
+    if (accountBalance == 0) {
+      return 0;
+    }
+    uint256 cumulatedInterest =
+      MathUtils.calculateCompoundedInterest(stableRate, _timestamps[account]);
+    return accountBalance.rayMul(cumulatedInterest);
+  }
 }

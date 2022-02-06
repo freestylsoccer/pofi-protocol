@@ -38,7 +38,7 @@ task('verify:tokens', 'Deploy oracles for dev enviroment')
 
     await verifyContract(
       eContractid.InitializableAdminUpgradeabilityProxy,
-      await getPToken("0x587AC2c09479de3c330830b82c762f02b11F1860"),
+      await getPToken("0xd27175f5DfbFc43E79570f01dA320BBcc07836F8"),
       []
     );
 
@@ -47,16 +47,16 @@ task('verify:tokens', 'Deploy oracles for dev enviroment')
     // console.log(configs);
     const otherReserveAssets =
     {
-      DAI: "0xA325C8f4e48F9331FcF680D9757e9d7Af4461394",
-      TUSD: "0x70B7dC2DF4d782f2287d5cb36e2FD1bBB695074d",
-      USDC: "0x24CBec54ad1cC16B8e7bCB681D2E9F51939FC617",
-      USDT: "0x041A67A9fe6d7C0E13c1ae5d69784C6c9beb2216",
-      SUSD: "0x5595Aaa3Ae2bc8816989b7DFEBf71F276A7eEacf",
-      BUSD: "0xFD4d00188B0a312d7d339C815B04b766b273f7C0",
+      DAI: "0x58397AbCe419984AC70ae1B24869C84a05111e21",
+      TUSD: "0xd0761F8315d52CCc7B5D524032060e7166c47a00",
+      USDC: "0x28B389456aa1f841261f0809d2c2b5106566E13f",
+      USDT: "0x4633c6F79e27e1B75eA38632740506dD5f56e33C",
+      SUSD: "0xdfA2469CBFD7A0AFd74fae5b50c02255391B21EC",
+      BUSD: "0x761EaaE4CDF672da139aba3f9C32A987117C2142",
     }
     await verifyContract(
       eContractid.InitializableAdminUpgradeabilityProxy,
-      await getAToken("0x04Ad3399D9108B2121BdE669f8d5C1B291758E40"),
+      await getAToken("0x347c43320E52fb4848C2A3F7f46e7752FD3dDa53"),
       []
     );
 
@@ -92,7 +92,7 @@ task('verify:tokens', 'Deploy oracles for dev enviroment')
         await getProxy(stableDebtTokenAddress),
         [lendingPoolConfigurator.address]
       );
-
+      /*
       // Proxy Variable Debt
       console.log(`\n- Verifying  Debt Token proxy...\n`);
       await verifyContract(
@@ -100,6 +100,7 @@ task('verify:tokens', 'Deploy oracles for dev enviroment')
         await getProxy(variableDebtTokenAddress),
         [lendingPoolConfigurator.address]
       );
+      */
 
       // Proxy aToken
       console.log('\n- Verifying aToken proxy...\n');
@@ -124,7 +125,7 @@ task('verify:tokens', 'Deploy oracles for dev enviroment')
           stableRateSlope2,
         ]
       );
-      
+
       const stableDebt = await getAddressById(`stableDebt${token}`);
       const variableDebt = await getAddressById(`variableDebt${token}`);
       const aToken = await getAddressById(`a${token}`);
@@ -135,7 +136,7 @@ task('verify:tokens', 'Deploy oracles for dev enviroment')
           lendingPoolProxy.address,
           tokenAddress,
           treasuryAddress,
-          `Aave interest bearing ${token}`,
+          `Pofi interest bearing ${token}`,
           `a${token}`,
           ZERO_ADDRESS,
         ]);
@@ -148,13 +149,14 @@ task('verify:tokens', 'Deploy oracles for dev enviroment')
         await verifyContract(eContractid.StableDebtToken, await getStableDebtToken(stableDebt), [
           lendingPoolProxy.address,
           tokenAddress,
-          `Aave stable debt bearing ${token}`,
+          `Pofi stable debt bearing ${token}`,
           `stableDebt${token}`,
           ZERO_ADDRESS,
         ]);
       } else {
         console.error(`Skipping stable debt verify for ${token}. Missing address at JSON DB.`);
       }
+      /*
       if (variableDebt) {
         console.log('\n- Verifying VariableDebtToken...\n');
         await verifyContract(
@@ -171,5 +173,6 @@ task('verify:tokens', 'Deploy oracles for dev enviroment')
       } else {
         console.error(`Skipping variable debt verify for ${token}. Missing address at JSON DB.`);
       }
+      */
     }
   });

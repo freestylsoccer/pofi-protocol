@@ -166,6 +166,8 @@ contract UiPoolDataProviderV2V3 is IUiPoolDataProviderV3 {
         ).scaledBalanceOf(user);
         userReservesData[i].principalStableDebt = IStableDebtToken(baseData.stableDebtTokenAddress)
           .principalBalanceOf(user);
+        userReservesData[i].stableDebtTokenBalance = IStableDebtToken(baseData.stableDebtTokenAddress)
+          .getUserDebt(user);
         if (userReservesData[i].principalStableDebt != 0) {
           userReservesData[i].stableBorrowRate = IStableDebtToken(baseData.stableDebtTokenAddress)
             .getUserStableRate(user);

@@ -130,4 +130,10 @@ interface IStableDebtToken is IInitializableDebtToken {
    * @dev Returns the address of the incentives controller contract
    **/
   function getIncentivesController() external view returns (IAaveIncentivesController);
+
+  /**
+   * @dev Returns the current debt balance of the user
+   * @return The debt balance of the user
+   **/
+  function getUserDebt(address user) external view returns (uint256);
 }

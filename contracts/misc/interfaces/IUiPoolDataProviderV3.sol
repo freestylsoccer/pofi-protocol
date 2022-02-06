@@ -48,6 +48,7 @@ interface IUiPoolDataProviderV3 {
     uint256 stableBorrowRate;
     uint256 scaledVariableDebt;
     uint256 principalStableDebt;
+    uint256 stableDebtTokenBalance;
     uint256 stableBorrowLastUpdateTimestamp;
   }
 
