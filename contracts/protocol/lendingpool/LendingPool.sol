@@ -627,9 +627,9 @@ contract LendingPool is VersionedInitializable, ILendingPool, LendingPoolStorage
 
     DataTypes.ReserveData storage reserve = _reserves[project];
 
-    reserve.projectBorrower = projectBorrower;
-
     reserve.updateState();
+
+    reserve.projectBorrower = projectBorrower;
   }
 
   function updateInterestRates(
@@ -640,8 +640,8 @@ contract LendingPool is VersionedInitializable, ILendingPool, LendingPoolStorage
 
     DataTypes.ReserveData storage reserve = _reserves[project];
 
-    reserve.updateProjectInterestRates(project, newDepositRate, newBorrowRate);
-
     reserve.updateState();
+
+    reserve.updateProjectInterestRates(project, newDepositRate, newBorrowRate);
   }
 }

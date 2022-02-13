@@ -194,7 +194,7 @@ contract AToken is
 
     // mint pTokens to track captial deposited
     address pToken = _pool.getPTokenAddress(_project);
-    IPToken(pToken).mint(user, amountScaled);
+    IPToken(pToken).mint(user, amount);
 
     emit Transfer(address(0), user, amount);
     emit Mint(user, amount, index);

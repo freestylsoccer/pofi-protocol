@@ -541,12 +541,49 @@ contract LendingPoolConfigurator is VersionedInitializable, ILendingPoolConfigur
     emit DepositsDisabledOnReserve(project);
   }
 
+  /**
+   * @dev Update liquidityRate and borrowRate on reserve
+   * @param project The address of the project contrat associated to the reserve
+   * @param newDepositRate The new liquidityRate in ray
+   * @param newBorrowRate The new borrowRate in ray
+   **/
   function updateReserveRates(
     address project,
-    uint128 newDespositRate,
+    uint128 newDepositRate,
     uint128 newBorrowRate
     ) external onlyPoolAdmin {
-      pool.updateInterestRates(project, newDespositRate, newBorrowRate);
+      pool.updateInterestRates(project, newDepositRate, newBorrowRate);
+  }
+
+  /**
+   * @dev Update liquidityRate and borrowRate on reserve
+   * @param project The address of the project contrat associated to the reserve
+   * @param newDepositRate The new liquidityRate in ray
+   * @param newBorrowRate The new borrowRate in ray
+   * @param depositsEnabled Enable or disable deposits 1 to enable 0 to disable
+   * @param withdrawalsEnabled Enable or disable withdrawals 1 to enable 0 to disable
+   * @param interestWithdrawalsEnabled Enable or disable withdrawals 1 to enable 0 to disable
+   * @param borrowingEnabled Enable or disable borrows 1 to enable 0 to disable
+   **/
+  function initializeReserve(
+    address project,
+    uint128 newDepositRate,
+    uint128 newBorrowRate,
+    bool depositsEnabled,
+    bool withdrawalsEnabled,
+    bool interestWithdrawalsEnabled,
+    bool borrowingEnabled
+    ) external onlyPoolAdmin {
+      DataTypes.ReserveConfigurationMap memory currentConfig = pool.getConfiguration(project);
+
+      currentConfig.setDepositsEnabled(depositsEnabled);
+      currentConfig.setWithdrawalsEnabled(withdrawalsEnabled);
+      currentConfig.setInterestWithdrawalsEnabled(interestWithdrawalsEnabled);
+      currentConfig.setBorrowingEnabled(borrowingEnabled);
+
+      pool.setConfiguration(project, currentConfig.data);
+
+      pool.updateInterestRates(project, newDepositRate, newBorrowRate);
   }
 
   /**
